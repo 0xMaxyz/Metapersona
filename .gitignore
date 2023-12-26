@@ -12,3 +12,7 @@ docs/
 
 # Dotenv file
 .env
+
+# scripts
+gen.env.example.sh
+
