@@ -1,0 +1,10 @@
+{
+  "name": "metapersona",
+  "version": "0.0.1",
+  "repository": "https://github.com/omni001s/metapersona.git",
+  "author": "omni001@proton.me",
+  "license": "MIT",
+  "devDependencies": {
+    "solhint": "^4.0.0"
+  }
+}
