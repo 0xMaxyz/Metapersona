@@ -1,9 +1,8 @@
 [profile.default]
 src = "src"
 out = "out"
-libs = ["lib",'node_modules']
-remappings = [
-    
-]
+libs = ["lib"]
+build_info = true
+extra_output = ["storageLayout"]
 solc = '0.8.23'
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
