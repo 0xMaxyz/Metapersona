@@ -24,7 +24,7 @@ library Helpers {
         } else if (c >= CHAR_A_CAP && c <= CHAR_F_CAP) {
             return 10 + c - CHAR_A_CAP;
         } else {
-            revert Errors.InvalidHexChar();
+            revert Errors.MetaPersona_InvalidHexChar();
         }
     }
 }

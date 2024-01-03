@@ -7,5 +7,9 @@
     "solidity.compileUsingRemoteVersion": "v0.8.23+commit.f704f362",
     "solidity.defaultCompiler": "remote",
     "solidity.packageDefaultDependenciesContractsDirectory": "src",
-    "solidity.packageDefaultDependenciesDirectory": "lib"
+    "solidity.packageDefaultDependenciesDirectory": "lib",
+    "solidity.enabledAsYouTypeCompilationErrorCheck": false,
+    "files.associations": {
+      ".env.*": "dotenv",
+    },
 }

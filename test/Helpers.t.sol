@@ -48,7 +48,7 @@ contract HelpersTest is Test {
         assertEq(15, output);
 
         input = uint8(bytes("g")[0]);
-        vm.expectRevert(Errors.InvalidHexChar.selector);
+        vm.expectRevert(Errors.MetaPersona_InvalidHexChar.selector);
         output = Helpers.fromHexChar(input);
     }
 }
