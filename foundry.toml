@@ -4,5 +4,8 @@ out = "out"
 libs = ["lib"]
 build_info = true
 extra_output = ["storageLayout"]
-solc = '0.8.23'
+solc = "0.8.23"
+
+[rpc_endpoints]
+areon="${AREON_TESTNET_RPC_URL}"
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
