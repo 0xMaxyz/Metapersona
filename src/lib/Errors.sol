@@ -8,4 +8,10 @@ library Errors {
     error MetaPersona_InvalidFunctionArgs();
     error MetaPersona_InvalidHexChar();
     error MetaPersona_InvalidInputGeneticData();
+
+    error MetaPersona_PersonaNotFound();
+    error MetaPersona_PersonaNotOwnedByYou();
+
+    error MetaPersona_WrongGender();
+    error MetaPersona_IncompatiblePersonas();
 }
