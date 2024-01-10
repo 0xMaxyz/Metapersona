@@ -14,4 +14,11 @@ library Errors {
 
     error MetaPersona_WrongGender();
     error MetaPersona_IncompatiblePersonas();
+
+    error MetaPersona_InvalidInput();
+    error MetaPersona_MaxCrossoversReached();
+
+    error MetaPersona_NotMutable();
+    error MetaPersona_InvalidChromosome();
+    error MetaPersona_InvalidGeneticCombination();
 }

@@ -5,10 +5,9 @@ import {Test, console2} from "forge-std/Test.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import "../src/MetaPersona.sol";
 import "../src/lib/Helpers.sol";
-import "../src/lib/Structs.sol";
-import "../src/lib/Genetics.sol";
 
 contract MetaPersonaTest is Test {
+    string uri = "https://www.metapersona.fun/pid/";
     address private proxy;
     address deployerAddress;
     MetaPersona metaPersona;
@@ -19,21 +18,14 @@ contract MetaPersonaTest is Test {
         deployerAddress = vm.addr(deployerPrivateKey);
 
         vm.startPrank(deployerAddress);
-        proxy = Upgrades.deployUUPSProxy(
-            "MetaPersona.sol",
-            abi.encodeCall(MetaPersona.initialize, (deployerAddress, deployerAddress, deployerAddress))
-        );
+        proxy =
+            Upgrades.deployUUPSProxy("MetaPersona.sol", abi.encodeCall(MetaPersona.initialize, (deployerAddress, uri)));
         vm.stopPrank();
 
         metaPersona = MetaPersona(proxy);
     }
 
     function test_Access() public {
-        // Minter
-        bytes32 minter = metaPersona.MINTER_ROLE();
-        bool isMinter = metaPersona.hasRole(minter, deployerAddress);
-
-        assertEq(isMinter, true);
         // Upgrader
         bytes32 upgrader = metaPersona.UPGRADER_ROLE();
         bool isUpgrader = metaPersona.hasRole(upgrader, deployerAddress);
@@ -72,19 +64,19 @@ contract MetaPersonaTest is Test {
 
     uint256 constant chromosomeYMask = 0x0000000000000000000000000000000000000000000000ffffffffffffffffff;
 
-    function initializeChromosomes(bool _male) private returns (Structs.Chromosome memory _chromosome) {
-        for (uint256 j = 0; j < 39; j++) {
-            uint256 rand = Helpers.random(randomSeed++);
-            _chromosome.DNA[j] = rand;
-        }
-        if (_male) {
-            // Remove X chromosome
-            _chromosome.DNA[36] = _chromosome.DNA[36] & (~Genetics.C_X_36_MASK);
-            _chromosome.DNA[37] = 0;
-            _chromosome.DNA[38] = _chromosome.DNA[38] & (Genetics.C_Y_38_MASK);
-        } else {
-            // Remove Y chromosome
-            _chromosome.DNA[38] = _chromosome.DNA[38] & (~Genetics.C_Y_38_MASK);
-        }
-    }
+    // function initializeChromosomes(bool _male) private returns (Structs.Chromosome memory _chromosome) {
+    //     for (uint256 j = 0; j < 39; j++) {
+    //         uint256 rand = Helpers.random(randomSeed++);
+    //         _chromosome.DNA[j] = rand;
+    //     }
+    //     if (_male) {
+    //         // Remove X chromosome
+    //         _chromosome.DNA[36] = _chromosome.DNA[36] & (~Genetics.C_X_36_MASK);
+    //         _chromosome.DNA[37] = 0;
+    //         _chromosome.DNA[38] = _chromosome.DNA[38] & (Genetics.C_Y_38_MASK);
+    //     } else {
+    //         // Remove Y chromosome
+    //         _chromosome.DNA[38] = _chromosome.DNA[38] & (~Genetics.C_Y_38_MASK);
+    //     }
+    // }
 }
