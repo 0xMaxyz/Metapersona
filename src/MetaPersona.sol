@@ -25,8 +25,10 @@ contract MetaPersona is
 
     // MetaPersona
 
+    uint256 public constant METAPERSONATOKEN = 0;
     uint256 public constant ADAM = 1;
     uint256 public constant EVE = 2;
+    uint256 public personaId;
 
     uint256 private seed;
 
@@ -48,6 +50,7 @@ contract MetaPersona is
 
         // initialize storage
         seed = 1;
+        personaId = 1;
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
@@ -91,7 +94,7 @@ contract MetaPersona is
 
     mapping(uint256 => Chromosomes) chromosomesN;
 
-    function _makeNewPersona(address owner, uint256 personaId) internal {
+    function _makeNewPersona(address owner, uint256 personaId) internal returns (uint256) {
         _mint(owner, personaId, 1, "");
     }
 
@@ -124,6 +127,7 @@ contract MetaPersona is
         chromosomesN[EVE] = eve;
 
         emit Genesis(block.timestamp);
+        personaId += 2;
     }
 
     function getChromosomesN(address _owner, uint256 _personaId) external virtual returns (Chromosomes) {
@@ -137,40 +141,58 @@ contract MetaPersona is
     }
 
     // breeding
+    event NewPersonaBorn(uint256 indexed personaId, address indexed receiver);
 
-    // function _breed(
-    //     uint256 _personaId1,
-    //     uint256 _personaId2,
-    //     address _personaOwner1,
-    //     address _personaOwner2,
-    //     address _receiver
-    // ) internal returns (uint256 newPersonaId) {
-    //     // make sure that these persona's are owned by the input owners, otherwise revert
-    //     _revertIfNotOwned(_personaOwner1, _personaId1);
-    //     _revertIfNotOwned(_personaOwner2, _personaId2);
+    function _breed(
+        uint256 _personaId1,
+        uint256 _personaId2,
+        address _personaOwner1,
+        address _personaOwner2,
+        address _receiver
+    ) internal returns (uint256 newPersonaId) {
+        // make sure that these persona's are owned by the input owners, otherwise revert
+        _revertIfNotOwned(_personaOwner1, _personaId1);
+        _revertIfNotOwned(_personaOwner2, _personaId2);
 
-    //     // check one is female and one is a male
-    //     Genetics.Gender persona1Gender = _getGender(_personaOwner1, _personaId1);
-    //     Genetics.Gender persona2Gender = _getGender(_personaOwner2, _personaId2);
+        // check one is female and one is a male
+        Genetics.Gender persona1Gender = chromosomesN[_personaId1].getGender();
+        Genetics.Gender persona2Gender = chromosomesN[_personaId2].getGender();
 
-    //     if (
-    //         (persona1Gender == Genetics.Gender.Female && persona2Gender == Genetics.Gender.Male)
-    //             || (persona1Gender == Genetics.Gender.Male && persona2Gender == Genetics.Gender.Female)
-    //     ) {
-    //         // breedable
-    //         Chromosomes chr1 = chromosomesN[_personaId1];
-    //         Chromosomes chr2 = chromosomesN[_personaId2];
-    //         // get gametes
-    //         uint256[39][4] memory chr1_gametes = Genetics.meiosisG(chr1.getDNA(1), chr1.getDNA(2), seed);
-    //         uint256[39][4] memory chr2_gametes = Genetics.meiosisG(chr2.getDNA(1), chr2.getDNA(2), seed);
+        if (
+            (persona1Gender == Genetics.Gender.Female && persona2Gender == Genetics.Gender.Male)
+                || (persona1Gender == Genetics.Gender.Male && persona2Gender == Genetics.Gender.Female)
+        ) {
+            // breedable
+            Chromosomes chr1 = chromosomesN[_personaId1];
+            Chromosomes chr2 = chromosomesN[_personaId2];
+            // get gametes
+            Genetics.ChromosomeStructure[4] memory persona1_gametes = Genetics.meiosis(chr1, seed);
+            Genetics.ChromosomeStructure[4] memory persona2_gametes = Genetics.meiosis(chr2, seed);
 
-    //         // randomly select 1 gamete from each
-    //         uint256 gamete1_index = Helpers.random(seed);
-    //         uint256 gamete2_index = Helpers.random(gamete1_index);
+            // randomly select 1 gamete from each
+            uint256 gamete1_index = Helpers.random(seed);
+            uint256 gamete2_index = Helpers.random(gamete1_index);
+            seed = gamete2_index;
 
-    //         seed = gamete2_index;
-    //     } else {
-    //         revert Errors.MetaPersona_IncompatiblePersonas();
-    //     }
-    // }
+            Genetics.ChromosomeStructure memory selected_gamet1 = persona1_gametes[gamete1_index % 4];
+            Genetics.ChromosomeStructure memory selected_gamet2 = persona1_gametes[gamete2_index % 4];
+
+            // make new chromosomes
+            Chromosomes newChr = new Chromosomes(
+                selected_gamet1.autosomes,
+                selected_gamet1.x,
+                selected_gamet1.y,
+                selected_gamet2.autosomes,
+                selected_gamet2.x,
+                selected_gamet2.y
+            );
+
+            uint256 newPersonaId = _makeNewPersona(_receiver, personaId++);
+            chromosomesN[newPersonaId] = newChr;
+
+            emit NewPersonaBorn(newPersonaId, _receiver);
+        } else {
+            revert Errors.MetaPersona_IncompatiblePersonas();
+        }
+    }
 }

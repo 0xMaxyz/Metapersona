@@ -7,6 +7,12 @@ import "./Errors.sol";
 import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 library Genetics {
+    struct ChromosomeStructure {
+        uint256[37] autosomes;
+        uint256[2] x;
+        uint192 y;
+    }
+
     enum Gender {
         Undefined,
         Female,
@@ -17,6 +23,20 @@ library Genetics {
         Undefined,
         X,
         Y
+    }
+
+    function meiosis(Chromosomes _chr, uint256 seed) external returns (ChromosomeStructure[4] memory) {
+        ChromosomeStructure memory cs_1;
+        ChromosomeStructure memory cs_2;
+        ChromosomeStructure memory cs_3;
+        ChromosomeStructure memory cs_4;
+
+        Chromosome instance = _chr.getChromosme(1);
+
+        (cs_1, cs_2) = instance.crossover(_chr, seed);
+        (cs_3, cs_4) = instance.crossover(_chr, seed);
+
+        return [cs_1, cs_2, cs_3, cs_4];
     }
 }
 
@@ -111,12 +131,6 @@ contract Chromosome {
 
     BitMaps.BitMap private uniqueValues;
 
-    struct ChromosomeStructure {
-        uint256[37] autosomes;
-        uint256[2] x;
-        uint192 y;
-    }
-
     uint256[37] private autosomes;
     uint256[2] private x;
     uint192 private y;
@@ -166,12 +180,12 @@ contract Chromosome {
         }
     }
 
-    function _crossover(Chromosomes _chr, uint256 seed)
+    function crossover(Chromosomes _chr, uint256 seed)
         public
-        returns (ChromosomeStructure memory, ChromosomeStructure memory)
+        returns (Genetics.ChromosomeStructure memory, Genetics.ChromosomeStructure memory)
     {
-        ChromosomeStructure memory cs_1;
-        ChromosomeStructure memory cs_2;
+        Genetics.ChromosomeStructure memory cs_1;
+        Genetics.ChromosomeStructure memory cs_2;
 
         Genetics.Gender gender = _chr.getGender();
 
@@ -184,26 +198,6 @@ contract Chromosome {
             (cs_1.x, cs_1.y, cs_2.x, cs_2.y) = doMaleCrossover(_chr, seed);
             (cs_1.autosomes, cs_2.autosomes) = doAutosomalCrossover(_chr, seed);
         }
-    }
-
-    function crossover(Chromosomes _chr, uint256 seed)
-        external
-        returns (
-            ChromosomeStructure memory,
-            ChromosomeStructure memory,
-            ChromosomeStructure memory,
-            ChromosomeStructure memory
-        )
-    {
-        ChromosomeStructure memory cs_1;
-        ChromosomeStructure memory cs_2;
-        ChromosomeStructure memory cs_3;
-        ChromosomeStructure memory cs_4;
-
-        (cs_1, cs_2) = _crossover(_chr, seed);
-        (cs_3, cs_4) = _crossover(_chr, seed);
-
-        return (cs_1, cs_2, cs_3, cs_4);
     }
 
     function doFemaleCrossover(uint256[2] memory chr1_x, uint256[2] memory chr2_x, uint256 seed)
