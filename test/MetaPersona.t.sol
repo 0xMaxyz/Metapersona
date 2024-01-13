@@ -1,82 +1,82 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {Test, console2} from "forge-std/Test.sol";
+import "forge-std/Test.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
-import "../src/MetaPersona.sol";
-import "../src/lib/Helpers.sol";
 
-contract MetaPersonaTest is Test {
-    string uri = "https://www.metapersona.fun/pid/";
-    address private proxy;
+import "../src/MetaPersona.sol";
+import "../src/Chromosome.sol";
+
+contract MetaPersonaTest is Test, PersonaBase {
     address deployerAddress;
+    string uri;
     MetaPersona metaPersona;
     uint256 randomSeed;
 
     function setUp() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        deployerAddress = vm.addr(deployerPrivateKey);
+        deployerAddress = vm.envAddress("DEPLOYER");
+        uri = vm.envString("URI");
 
         vm.startPrank(deployerAddress);
-        proxy =
-            Upgrades.deployUUPSProxy("MetaPersona.sol", abi.encodeCall(MetaPersona.initialize, (deployerAddress, uri)));
+        metaPersona = new MetaPersona(deployerAddress, uri);
         vm.stopPrank();
-
-        metaPersona = MetaPersona(proxy);
     }
 
     function test_Access() public {
-        // Upgrader
-        bytes32 upgrader = metaPersona.UPGRADER_ROLE();
-        bool isUpgrader = metaPersona.hasRole(upgrader, deployerAddress);
-
-        assertEq(isUpgrader, true);
         // Admin
         bytes32 admin = metaPersona.DEFAULT_ADMIN_ROLE();
         bool isAdmin = metaPersona.hasRole(admin, deployerAddress);
 
         assertEq(isAdmin, true);
+
+        // God
+        bytes32 god = metaPersona.GOD_ROLE();
+        bool isGod = metaPersona.hasRole(god, deployerAddress);
+
+        assertEq(isGod, true);
     }
 
-    // function test_genesis() public {
-    //     vm.startPrank(deployerAddress);
-    //     Structs.Chromosome memory adamFather = initializeChromosomes(true);
-    //     Structs.Chromosome memory adamMother = initializeChromosomes(false);
-    //     Structs.Chromosomes memory adam;
-    //     adam.chromosome[0] = adamFather;
-    //     adam.chromosome[1] = adamMother;
+    function fillAutosome(uint256[37] memory _array) public view {
+        for (uint256 i = 0; i < _array.length; i++) {
+            _array[i] = i;
+        }
+    }
 
-    //     Structs.Chromosome memory eveFather = initializeChromosomes(false);
-    //     Structs.Chromosome memory eveMother = initializeChromosomes(false);
-    //     Structs.Chromosomes memory eve;
-    //     eve.chromosome[0] = eveFather;
-    //     eve.chromosome[1] = eveMother;
+    function fillX(uint256[2] memory _array) public view {
+        for (uint256 i = 0; i < _array.length; i++) {
+            _array[i] = i;
+        }
+    }
 
-    //     metaPersona.genesis(adam, eve);
-    //     vm.stopPrank();
+    function test_genesis() public {
+        vm.startPrank(deployerAddress);
 
-    //     Structs.Chromosomes memory savedAdam = metaPersona.getChromosomes(deployerAddress, 1);
-    //     Structs.Chromosomes memory savedEve = metaPersona.getChromosomes(deployerAddress, 2);
+        uint256[37] memory _adam_p_a;
+        uint192 _adam_p_y;
+        uint256[37] memory _adam_m_a;
+        uint256[2] memory _adam_m_x;
+        uint256[37] memory _eve_p_a;
+        uint256[2] memory _eve_p_x;
+        uint256[37] memory _eve_m_a;
+        uint256[2] memory _eve_m_x;
 
-    //     assertEq(keccak256(abi.encode(adam)), keccak256(abi.encode(savedAdam)));
-    //     assertEq(keccak256(abi.encode(eve)), keccak256(abi.encode(savedEve)));
-    // }
+        fillAutosome(_adam_p_a);
+        _adam_p_y = uint192(1);
+        fillAutosome(_adam_m_a);
+        fillX(_adam_m_x);
+        fillAutosome(_eve_p_a);
+        fillAutosome(_eve_m_a);
+        fillX(_eve_p_x);
+        fillX(_eve_m_x);
 
-    uint256 constant chromosomeYMask = 0x0000000000000000000000000000000000000000000000ffffffffffffffffff;
+        metaPersona.genesis(_adam_p_a, _adam_p_y, _adam_m_a, _adam_m_x, _eve_p_a, _eve_p_x, _eve_m_a, _eve_m_x);
+        vm.stopPrank();
 
-    // function initializeChromosomes(bool _male) private returns (Structs.Chromosome memory _chromosome) {
-    //     for (uint256 j = 0; j < 39; j++) {
-    //         uint256 rand = Helpers.random(randomSeed++);
-    //         _chromosome.DNA[j] = rand;
-    //     }
-    //     if (_male) {
-    //         // Remove X chromosome
-    //         _chromosome.DNA[36] = _chromosome.DNA[36] & (~Genetics.C_X_36_MASK);
-    //         _chromosome.DNA[37] = 0;
-    //         _chromosome.DNA[38] = _chromosome.DNA[38] & (Genetics.C_Y_38_MASK);
-    //     } else {
-    //         // Remove Y chromosome
-    //         _chromosome.DNA[38] = _chromosome.DNA[38] & (~Genetics.C_Y_38_MASK);
-    //     }
-    // }
+        // Structs.Chromosomes memory savedAdam = metaPersona.getChromosomes(deployerAddress, 1);
+        // Structs.Chromosomes memory savedEve = metaPersona.getChromosomes(deployerAddress, 2);
+
+        // assertEq(keccak256(abi.encode(adam)), keccak256(abi.encode(savedAdam)));
+        // assertEq(keccak256(abi.encode(eve)), keccak256(abi.encode(savedEve)));
+    }
 }

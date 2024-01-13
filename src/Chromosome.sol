@@ -1,12 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "./Constants.sol";
-import "./Helpers.sol";
-import "./Errors.sol";
 import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
-library Genetics {
+error MetaPersona_InvalidGeneticalDataInput(string genes);
+error MetaPersona_InvalidInputString();
+error MetaPersona_InvalidInputCharacter();
+error MetaPersona_InvalidFunctionArgs();
+error MetaPersona_InvalidHexChar();
+error MetaPersona_InvalidInputGeneticData();
+
+error MetaPersona_PersonaNotFound();
+error MetaPersona_PersonaNotOwnedByYou();
+
+error MetaPersona_WrongGender();
+error MetaPersona_IncompatiblePersonas();
+
+error MetaPersona_InvalidInput();
+error MetaPersona_MaxCrossoversReached();
+
+error MetaPersona_NotMutable();
+error MetaPersona_InvalidChromosome();
+error MetaPersona_InvalidGeneticCombination();
+
+abstract contract PersonaBase {
+    uint256 constant UI256MAX = ~uint256(0);
+    uint192 constant UI192MAX = ~uint192(0);
+
     struct ChromosomeStructure {
         uint256[37] autosomes;
         uint256[2] x;
@@ -25,7 +45,7 @@ library Genetics {
         Y
     }
 
-    function meiosis(Chromosomes _chr, uint256 seed) external returns (ChromosomeStructure[4] memory) {
+    function meiosis(Chromosomes _chr, uint256 seed) internal returns (ChromosomeStructure[4] memory) {
         ChromosomeStructure memory cs_1;
         ChromosomeStructure memory cs_2;
         ChromosomeStructure memory cs_3;
@@ -38,9 +58,23 @@ library Genetics {
 
         return [cs_1, cs_2, cs_3, cs_4];
     }
+
+    function random(uint256 seed) internal view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, msg.sender, seed)));
+    }
+
+    function randomBetween(uint256 _seed, uint256 _min, uint256 _max) internal view returns (uint256) {
+        if (_min <= _max) {
+            revert MetaPersona_InvalidInput();
+        }
+
+        uint256 rand = random(_seed);
+
+        return (rand % (_max - _min + 1)) + _min;
+    }
 }
 
-contract Chromosomes {
+contract Chromosomes is PersonaBase {
     Chromosome private c1;
     Chromosome private c2;
 
@@ -52,18 +86,28 @@ contract Chromosomes {
         uint256[2] memory _x2,
         uint192 _y2
     ) {
-        // revert if both sex chromosomes are the same
-        if ((_y1 > 0 && _y2 > 0) || ((_x1[0] > 0 || _x1[1] > 0) && (_x2[0] > 0 || _x2[1] > 0))) {
-            revert Errors.MetaPersona_InvalidGeneticCombination();
+        if (
+            // Rule 1: If _y1 > 0, then _x1 shall be empty
+            (_y1 > 0 && _x1[0] != 0 && _x1[1] != 0)
+            // Rule 2: If _x1 is not empty, then _y1 shall be zero
+            || ((_x1[0] != 0 || _x1[1] != 0) && _y1 != 0)
+            // Rule 3: If _y2 > 0, then _x2 shall be empty
+            || (_y2 > 0 && _x2[0] != 0 && _x2[1] != 0)
+            // Rule 4: If _x2 is not empty, then _y2 shall be zero
+            || ((_x2[0] != 0 || _x2[1] != 0) && _y2 != 0)
+            // Rule 5: _y1 and _y2 cannot be both greater than zero
+            || (_y1 > 0 && _y2 > 0)
+        ) {
+            revert MetaPersona_InvalidGeneticCombination();
         }
 
-        c1.setDNA(_autosomes1, _x1, _y1);
-        c2.setDNA(_autosomes2, _x2, _y2);
+        c1 = new Chromosome(_autosomes1, _x1, _y1);
+        c2 = new Chromosome(_autosomes2, _x2, _y2);
     }
 
     function getX(uint8 _c) external view returns (uint256[2] memory) {
         if (_c > 2 || _c == 0) {
-            revert Errors.MetaPersona_InvalidChromosome();
+            revert MetaPersona_InvalidChromosome();
         }
 
         if (_c == 1) {
@@ -75,7 +119,7 @@ contract Chromosomes {
 
     function getY(uint8 _c) external view returns (uint192) {
         if (_c > 2 || _c == 0) {
-            revert Errors.MetaPersona_InvalidChromosome();
+            revert MetaPersona_InvalidChromosome();
         }
 
         if (_c == 1) {
@@ -87,7 +131,7 @@ contract Chromosomes {
 
     function getAutosome(uint8 _c) external view returns (uint256[37] memory) {
         if (_c > 2 || _c == 0) {
-            revert Errors.MetaPersona_InvalidChromosome();
+            revert MetaPersona_InvalidChromosome();
         }
 
         if (_c == 1) {
@@ -99,7 +143,7 @@ contract Chromosomes {
 
     function getChromosme(uint8 _c) external view returns (Chromosome) {
         if (_c > 2 || _c == 0) {
-            revert Errors.MetaPersona_InvalidChromosome();
+            revert MetaPersona_InvalidChromosome();
         }
 
         if (_c == 1) {
@@ -109,24 +153,21 @@ contract Chromosomes {
         }
     }
 
-    function getGender() public view returns (Genetics.Gender) {
-        Genetics.XorY c1_XorY = c1.isXorY();
-        Genetics.XorY c2_XorY = c2.isXorY();
+    function getGender() public view returns (Gender) {
+        XorY c1_XorY = c1.isXorY();
+        XorY c2_XorY = c2.isXorY();
 
-        if (c1_XorY == Genetics.XorY.X && c2_XorY == Genetics.XorY.X) {
-            return Genetics.Gender.Female;
-        } else if (
-            (c1_XorY == Genetics.XorY.X && c2_XorY == Genetics.XorY.Y)
-                || (c1_XorY == Genetics.XorY.Y && c2_XorY == Genetics.XorY.X)
-        ) {
-            return Genetics.Gender.Male;
+        if (c1_XorY == XorY.X && c2_XorY == XorY.X) {
+            return Gender.Female;
+        } else if ((c1_XorY == XorY.X && c2_XorY == XorY.Y) || (c1_XorY == XorY.Y && c2_XorY == XorY.X)) {
+            return Gender.Male;
         } else {
-            return Genetics.Gender.Undefined;
+            return Gender.Undefined;
         }
     }
 }
 
-contract Chromosome {
+contract Chromosome is PersonaBase {
     using BitMaps for BitMaps.BitMap;
 
     BitMaps.BitMap private uniqueValues;
@@ -137,14 +178,14 @@ contract Chromosome {
 
     bool private isDNASet;
 
-    function setDNA(uint256[37] memory _autosomes, uint256[2] memory _x, uint192 _y) external {
+    constructor(uint256[37] memory _autosomes, uint256[2] memory _x, uint192 _y) {
         // only set once
         if (isDNASet) {
-            revert Errors.MetaPersona_NotMutable();
+            revert MetaPersona_NotMutable();
         }
         // either x is set or y is set
         if ((_y > 0 && (_x[0] > 0 || _x[1] > 0)) || ((_x[0] > 0 || _x[1] > 0) && _y > 0)) {
-            revert Errors.MetaPersona_InvalidGeneticCombination();
+            revert MetaPersona_InvalidGeneticCombination();
         }
 
         for (uint256 i = 0; i < 37; i++) {
@@ -170,31 +211,31 @@ contract Chromosome {
         return y;
     }
 
-    function isXorY() public view returns (Genetics.XorY) {
+    function isXorY() public view returns (XorY) {
         if (y == 0 && (x[0] > 0 || x[1] > 0)) {
-            return Genetics.XorY.X;
+            return XorY.X;
         } else if (y > 0 && (x[0] == 0 && x[1] == 0)) {
-            return Genetics.XorY.Y;
+            return XorY.Y;
         } else {
-            return Genetics.XorY.Undefined;
+            return XorY.Undefined;
         }
     }
 
     function crossover(Chromosomes _chr, uint256 seed)
         public
-        returns (Genetics.ChromosomeStructure memory, Genetics.ChromosomeStructure memory)
+        returns (ChromosomeStructure memory, ChromosomeStructure memory)
     {
-        Genetics.ChromosomeStructure memory cs_1;
-        Genetics.ChromosomeStructure memory cs_2;
+        ChromosomeStructure memory cs_1;
+        ChromosomeStructure memory cs_2;
 
-        Genetics.Gender gender = _chr.getGender();
+        Gender gender = _chr.getGender();
 
-        if (gender == Genetics.Gender.Female) {
+        if (gender == Gender.Female) {
             (cs_1.x, cs_2.x) = doFemaleCrossover(_chr.getChromosme(1).getX(), _chr.getChromosme(2).getX(), seed);
             (cs_1.autosomes, cs_2.autosomes) = doAutosomalCrossover(_chr, seed);
 
             return (cs_1, cs_2);
-        } else if (gender == Genetics.Gender.Male) {
+        } else if (gender == Gender.Male) {
             (cs_1.x, cs_1.y, cs_2.x, cs_2.y) = doMaleCrossover(_chr, seed);
             (cs_1.autosomes, cs_2.autosomes) = doAutosomalCrossover(_chr, seed);
         }
@@ -202,10 +243,11 @@ contract Chromosome {
 
     function doFemaleCrossover(uint256[2] memory chr1_x, uint256[2] memory chr2_x, uint256 seed)
         private
+        view
         returns (uint256[2] memory, uint256[2] memory)
     {
         // 3 to 8 times on each array
-        seed = Helpers.randomBetween(seed, 3, 8);
+        seed = randomBetween(seed, 3, 8);
         uint8 numXCrossovers = uint8(seed);
         uint8[] memory xCrossovers = new uint8[](numXCrossovers);
         xCrossovers = getXXCrossoverBytes(numXCrossovers, seed);
@@ -213,7 +255,7 @@ contract Chromosome {
         // Do the crossover on x[0]
         (uint256 chr1_xc0, uint256 chr2_xc0) = doXCrossover(chr1_x[0], chr2_x[0], xCrossovers);
         //
-        seed = Helpers.randomBetween(seed, 3, 8);
+        seed = randomBetween(seed, 3, 8);
         numXCrossovers = uint8(seed);
         xCrossovers = new uint8[](numXCrossovers);
         xCrossovers = getXXCrossoverBytes(numXCrossovers, seed);
@@ -226,6 +268,7 @@ contract Chromosome {
 
     function doMaleCrossover(Chromosomes _chr, uint256 seed)
         private
+        view
         returns (uint256[2] memory _x1, uint192 _y1, uint256[2] memory _x2, uint192 _y2)
     {
         // crossover happens only for n first byte and n last bytes of x and y
@@ -245,7 +288,7 @@ contract Chromosome {
         }
         // do the crossover
         // get a random number between 1 and 5
-        seed = Helpers.randomBetween(seed, 3, 8);
+        seed = randomBetween(seed, 3, 8);
         uint256 numByte = seed;
 
         uint256[2] memory iX = _chr.getChromosme(indexOfX).getX();
@@ -261,11 +304,11 @@ contract Chromosome {
         uint256 lastNbyteY = iY >> yShiftLength;
 
         // swap the sections
-        iX[0] = (iX[0] & (Constants.UI256MAX << (numByte * 8))) | firstNbyteY;
-        iX[1] = (iX[1] & (Constants.UI256MAX >> (numByte * 8))) | (lastNbyteY << xShiftLength);
+        iX[0] = (iX[0] & (UI256MAX << (numByte * 8))) | firstNbyteY;
+        iX[1] = (iX[1] & (UI256MAX >> (numByte * 8))) | (lastNbyteY << xShiftLength);
 
-        iY = (iY & (Constants.UI192MAX << uint192(numByte * 8))) | uint192(firstNbyteX);
-        iY = (iY & (Constants.UI192MAX >> uint192(numByte * 8))) | (uint192(lastNbyteX) << yShiftLength);
+        iY = (iY & (UI192MAX << uint192(numByte * 8))) | uint192(firstNbyteX);
+        iY = (iY & (UI192MAX >> uint192(numByte * 8))) | (uint192(lastNbyteX) << yShiftLength);
 
         uint256[2] memory emptyX;
 
@@ -296,6 +339,7 @@ contract Chromosome {
 
     function doXCrossover(uint256 _x1, uint256 _x2, uint8[] memory _crossoverIndexes)
         private
+        pure
         returns (uint256 _xc1, uint256 _xc2)
     {
         uint256 mask;
@@ -309,14 +353,14 @@ contract Chromosome {
         return (_xc1, _xc2);
     }
 
-    function getXXCrossoverBytes(uint8 _count, uint256 _seed) private returns (uint8[] memory) {
+    function getXXCrossoverBytes(uint8 _count, uint256 _seed) private view returns (uint8[] memory) {
         if (_count > 16) {
-            revert Errors.MetaPersona_InvalidFunctionArgs();
+            revert MetaPersona_InvalidFunctionArgs();
         }
         uint8[16] memory numbers = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32];
 
         for (uint8 i = 15; i > 0; i--) {
-            _seed = Helpers.random(_seed);
+            _seed = random(_seed);
             uint256 j = _seed % (i + 1);
             (numbers[i], numbers[j]) = (numbers[j], numbers[i]);
         }
@@ -331,7 +375,7 @@ contract Chromosome {
 
     function beforeCrossover(uint256 _seed, uint8 _maxCrossovers) private returns (uint8[] memory) {
         if (_maxCrossovers > 20) {
-            revert Errors.MetaPersona_MaxCrossoversReached();
+            revert MetaPersona_MaxCrossoversReached();
         }
 
         delete uniqueValues;
@@ -340,7 +384,7 @@ contract Chromosome {
         uint8 uniqueValueCount;
         uint8 byteShiftIndex;
 
-        _seed = Helpers.random(_seed);
+        _seed = random(_seed);
 
         uint8 coIndex;
         while (coIndex < 4) {
@@ -353,7 +397,7 @@ contract Chromosome {
         uint8[] memory val = new uint8[](coIndex);
 
         while (uniqueValueCount < coIndex) {
-            _seed = Helpers.random(_seed);
+            _seed = random(_seed);
             uint8 uniqueValue = uint8(_seed % maxVal);
             if (uniqueValues.get(uniqueValue)) {
                 byteShiftIndex++;

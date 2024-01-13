@@ -19,15 +19,4 @@ contract MiscTests is Test {
 
         assertEq(result, lsh);
     }
-
-    function test_GasTest() public {
-        uint256 input = 0xf23456789000000000000000000000000000000000aaaaaaaaaaaaaaffffffff;
-
-        uint256 b = input / 2;
-
-        uint256 a1 = b + 7;
-        uint256 a2 = b + 8;
-        uint256 a3 = b + 9;
-        uint256 a4 = b + 10;
-    }
 }

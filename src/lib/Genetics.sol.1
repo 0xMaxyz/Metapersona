@@ -1,0 +1,266 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.23;
+
+error MetaPersona_InvalidGeneticalDataInput(string genes);
+error MetaPersona_InvalidInputString();
+error MetaPersona_InvalidInputCharacter();
+error MetaPersona_InvalidFunctionArgs();
+error MetaPersona_InvalidHexChar();
+error MetaPersona_InvalidInputGeneticData();
+error MetaPersona_PersonaNotFound();
+error MetaPersona_PersonaNotOwnedByYou();
+error MetaPersona_WrongGender();
+error MetaPersona_IncompatiblePersonas();
+error MetaPersona_InvalidInput();
+error MetaPersona_MaxCrossoversReached();
+error MetaPersona_NotMutable();
+error MetaPersona_InvalidChromosome();
+error MetaPersona_InvalidGeneticCombination();
+
+library Genetics {
+    struct Chromosome {
+        uint256[37] autosomes;
+        uint256[2] x;
+        uint192 y;
+    }
+
+    enum Gender {
+        Undefined,
+        Female,
+        Male
+    }
+
+    enum XorY {
+        Undefined,
+        X,
+        Y
+    }
+
+    function getUint256Max() private pure returns (uint256) {
+        return ~uint256(0);
+    }
+
+    function getUint192Max() private pure returns (uint192) {
+        return ~uint192(0);
+    }
+
+    function random(uint256 _seed) internal view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, msg.sender, _seed)));
+    }
+
+    function randomBetween(uint256 _seed, uint256 _min, uint256 _max) internal view returns (uint256) {
+        if (_min <= _max) {
+            revert MetaPersona_InvalidInput();
+        }
+
+        uint256 rand = random(_seed);
+
+        return (rand % (_max - _min + 1)) + _min;
+    }
+}
+
+library ChromosomeLib {
+    function meiosis(Chromosomes _chr, uint256 seed) internal returns (ChromosomeStructure[4] memory) {
+        ChromosomeStructure memory cs_1;
+        ChromosomeStructure memory cs_2;
+        ChromosomeStructure memory cs_3;
+        ChromosomeStructure memory cs_4;
+
+        Chromosome instance = _chr.getChromosme(1);
+
+        (cs_1, cs_2) = instance.crossover(_chr, seed);
+        (cs_3, cs_4) = instance.crossover(_chr, seed);
+
+        return [cs_1, cs_2, cs_3, cs_4];
+    }
+
+    function crossover(Chromosomes _chr, uint256 seed)
+        public
+        returns (ChromosomeStructure memory, ChromosomeStructure memory)
+    {
+        ChromosomeStructure memory cs_1;
+        ChromosomeStructure memory cs_2;
+
+        Gender gender = _chr.getGender();
+
+        if (gender == Gender.Female) {
+            (cs_1.x, cs_2.x) = doFemaleCrossover(_chr.getChromosme(1).getX(), _chr.getChromosme(2).getX(), seed);
+            (cs_1.autosomes, cs_2.autosomes) = doAutosomalCrossover(_chr, seed);
+
+            return (cs_1, cs_2);
+        } else if (gender == Gender.Male) {
+            (cs_1.x, cs_1.y, cs_2.x, cs_2.y) = doMaleCrossover(_chr, seed);
+            (cs_1.autosomes, cs_2.autosomes) = doAutosomalCrossover(_chr, seed);
+        }
+    }
+
+    function doFemaleCrossover(uint256[2] memory chr1_x, uint256[2] memory chr2_x, uint256 seed)
+        private
+        view
+        returns (uint256[2] memory, uint256[2] memory)
+    {
+        // 3 to 8 times on each array
+        seed = randomBetween(seed, 3, 8);
+        uint8 numXCrossovers = uint8(seed);
+        uint8[] memory xCrossovers = new uint8[](numXCrossovers);
+        xCrossovers = getXXCrossoverBytes(numXCrossovers, seed);
+
+        // Do the crossover on x[0]
+        (uint256 chr1_xc0, uint256 chr2_xc0) = doXCrossover(chr1_x[0], chr2_x[0], xCrossovers);
+        //
+        seed = randomBetween(seed, 3, 8);
+        numXCrossovers = uint8(seed);
+        xCrossovers = new uint8[](numXCrossovers);
+        xCrossovers = getXXCrossoverBytes(numXCrossovers, seed);
+
+        // Do the crossover on x[1]
+        (uint256 chr1_xc1, uint256 chr2_xc1) = doXCrossover(chr1_x[1], chr2_x[1], xCrossovers);
+
+        return ([chr1_xc0, chr1_xc1], [chr2_xc0, chr2_xc1]);
+    }
+
+    function doMaleCrossover(Chromosomes _chr, uint256 seed)
+        private
+        view
+        returns (uint256[2] memory _x1, uint192 _y1, uint256[2] memory _x2, uint192 _y2)
+    {
+        // crossover happens only for n first byte and n last bytes of x and y
+        uint8 indexOfX; // 1 0r 2
+        uint8 indexOfY; // 1 0r 2
+
+        // find which chromosome is X and which one is Y
+        if (_chr.getY(1) == 0) {
+            // then the first one has x, second one has y
+            indexOfX = 1;
+            indexOfY = 2;
+        } else {
+            // first one has y, second one has x
+
+            indexOfX = 2;
+            indexOfY = 1;
+        }
+        // do the crossover
+        // get a random number between 1 and 5
+        seed = randomBetween(seed, 3, 8);
+        uint256 numByte = seed;
+
+        uint256[2] memory iX = _chr.getChromosme(indexOfX).getX();
+        uint192 iY = _chr.getChromosme(indexOfY).getY();
+
+        // exctract the first/last n byte of X and Y
+        uint8 xShiftLength = uint8(256 - numByte * 8);
+        uint8 yShiftLength = uint8(192 - numByte * 8);
+
+        uint256 firstNbyteX = (iX[0] << xShiftLength) >> xShiftLength;
+        uint256 lastNbyteX = iX[1] >> xShiftLength;
+        uint256 firstNbyteY = (iY << yShiftLength) >> yShiftLength;
+        uint256 lastNbyteY = iY >> yShiftLength;
+
+        // swap the sections
+        iX[0] = (iX[0] & (UI256MAX << (numByte * 8))) | firstNbyteY;
+        iX[1] = (iX[1] & (UI256MAX >> (numByte * 8))) | (lastNbyteY << xShiftLength);
+
+        iY = (iY & (UI192MAX << uint192(numByte * 8))) | uint192(firstNbyteX);
+        iY = (iY & (UI192MAX >> uint192(numByte * 8))) | (uint192(lastNbyteX) << yShiftLength);
+
+        uint256[2] memory emptyX;
+
+        if (indexOfX == 1) {
+            return (iX, uint192(0), emptyX, iY);
+        } else {
+            return (emptyX, iY, iX, uint192(0));
+        }
+    }
+
+    function doAutosomalCrossover(Chromosomes _chr, uint256 seed)
+        private
+        returns (uint256[37] memory, uint256[37] memory)
+    {
+        uint8[] memory indices = beforeCrossover(seed, 10);
+
+        uint256[37] memory auto1 = _chr.getAutosome(1);
+        uint256[37] memory auto2 = _chr.getAutosome(2);
+
+        for (uint256 i = 0; i < indices.length; i++) {
+            uint256 index = indices[i];
+
+            (auto1[index], auto2[index]) = (auto2[index], auto1[index]);
+        }
+
+        return (auto1, auto2);
+    }
+
+    function doXCrossover(uint256 _x1, uint256 _x2, uint8[] memory _crossoverIndexes)
+        private
+        pure
+        returns (uint256 _xc1, uint256 _xc2)
+    {
+        uint256 mask;
+        for (uint256 i = 0; i < _crossoverIndexes.length; i++) {
+            mask = mask | (1 << _crossoverIndexes[i]);
+        }
+
+        _xc1 = (_x1 & ~mask) | (_x2 & mask);
+        _xc2 = (_x2 & ~mask) | (_x1 & mask);
+
+        return (_xc1, _xc2);
+    }
+
+    function getXXCrossoverBytes(uint8 _count, uint256 _seed) private view returns (uint8[] memory) {
+        if (_count > 16) {
+            revert MetaPersona_InvalidFunctionArgs();
+        }
+        uint8[16] memory numbers = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32];
+
+        for (uint8 i = 15; i > 0; i--) {
+            _seed = random(_seed);
+            uint256 j = _seed % (i + 1);
+            (numbers[i], numbers[j]) = (numbers[j], numbers[i]);
+        }
+
+        uint8[] memory result = new uint8[](_count);
+        for (uint8 i = 0; i < _count; i++) {
+            result[i] = numbers[i];
+        }
+
+        return result;
+    }
+
+    function beforeCrossover(uint256 _seed, uint8 _maxCrossovers) private returns (uint8[] memory) {
+        if (_maxCrossovers > 20) {
+            revert MetaPersona_MaxCrossoversReached();
+        }
+
+        delete uniqueValues;
+
+        uint8 maxVal = 37;
+        uint8 uniqueValueCount;
+        uint8 byteShiftIndex;
+
+        _seed = random(_seed);
+
+        uint8 coIndex;
+        while (coIndex < 4) {
+            coIndex = uint8(((_seed >> (byteShiftIndex * 8)) & 0xFF) % _maxCrossovers);
+            byteShiftIndex++;
+        }
+
+        byteShiftIndex = 0;
+
+        uint8[] memory val = new uint8[](coIndex);
+
+        while (uniqueValueCount < coIndex) {
+            _seed = random(_seed);
+            uint8 uniqueValue = uint8(_seed % maxVal);
+            if (uniqueValues.get(uniqueValue)) {
+                byteShiftIndex++;
+                continue;
+            }
+            val[uniqueValueCount++] = uniqueValue;
+            uniqueValues.set(uniqueValue);
+            byteShiftIndex++;
+        }
+
+        return val;
+    }
+}
