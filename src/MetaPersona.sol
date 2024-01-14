@@ -3,9 +3,9 @@ pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./Chromosome.sol";
+import "./lib/Genetics.sol";
 
-contract MetaPersona is ERC1155, AccessControl, PersonaBase {
+contract MetaPersona is ERC1155, AccessControl {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant GOD_ROLE = keccak256("GOD_ROLE");
@@ -17,29 +17,18 @@ contract MetaPersona is ERC1155, AccessControl, PersonaBase {
 
     uint256 private seed;
 
-    constructor(address admin, string memory uri) ERC1155(uri) {
+    constructor(address admin, string memory uri, uint256 _seed) ERC1155(uri) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(GOD_ROLE, admin);
         _grantRole(MINTER_ROLE, admin);
 
         // initialize storage
-        seed = 1;
+        seed = _seed;
         personaId = 1;
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
         _setURI(newuri);
-    }
-
-    function mint(address account, uint256 id, uint256 amount, bytes memory data) public onlyRole(MINTER_ROLE) {
-        _mint(account, id, amount, data);
-    }
-
-    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
-        public
-        onlyRole(MINTER_ROLE)
-    {
-        _mintBatch(to, ids, amounts, data);
     }
 
     // The following functions are overrides required by Solidity.
@@ -54,10 +43,11 @@ contract MetaPersona is ERC1155, AccessControl, PersonaBase {
 
     event Genesis(uint256 indexed timestamp);
 
-    mapping(uint256 => Chromosomes) chromosomesN;
+    mapping(uint256 => Genetics.Chromosome[2]) chromosomesN;
 
     function _makeNewPersona(address _owner, uint256 _personaId) internal returns (uint256) {
         _mint(_owner, _personaId, 1, "");
+        return _personaId;
     }
 
     function _revertIfNotOwned(address _ownerAddress, uint256 _personaId) internal view {
@@ -66,11 +56,19 @@ contract MetaPersona is ERC1155, AccessControl, PersonaBase {
         }
     }
 
-    function getChromosomesN(address _owner, uint256 _personaId) external virtual returns (Chromosomes) {
+    function getChromosomesN(address _owner, uint256 _personaId)
+        external
+        virtual
+        returns (Genetics.Chromosome[2] memory)
+    {
         return _getChromosomesN(_owner, _personaId);
     }
 
-    function _getChromosomesN(address _owner, uint256 _personaId) internal view returns (Chromosomes) {
+    function _getChromosomesN(address _owner, uint256 _personaId)
+        internal
+        view
+        returns (Genetics.Chromosome[2] memory)
+    {
         _revertIfNotOwned(_owner, _personaId);
 
         return chromosomesN[_personaId];
@@ -90,43 +88,42 @@ contract MetaPersona is ERC1155, AccessControl, PersonaBase {
         _revertIfNotOwned(_personaOwner1, _personaId1);
         _revertIfNotOwned(_personaOwner2, _personaId2);
 
-        // check one is female and one is a male
-        Gender persona1Gender = chromosomesN[_personaId1].getGender();
-        Gender persona2Gender = chromosomesN[_personaId2].getGender();
+        // check if one is female and one is a male
+        Genetics.Gender persona1Gender = Genetics.getGender(chromosomesN[_personaId1]);
+        Genetics.Gender persona2Gender = Genetics.getGender(chromosomesN[_personaId2]);
 
         if (
-            (persona1Gender == Gender.Female && persona2Gender == Gender.Male)
-                || (persona1Gender == Gender.Male && persona2Gender == Gender.Female)
+            (persona1Gender == Genetics.Gender.Female && persona2Gender == Genetics.Gender.Male)
+                || (persona1Gender == Genetics.Gender.Male && persona2Gender == Genetics.Gender.Female)
         ) {
+            Random.RandomArgs memory rArgs;
+            uint256 rand;
+
+            rArgs.Prevrandao = block.prevrandao;
+            rArgs.Sender = msg.sender;
+            rArgs.Timestamp = block.timestamp;
             // breedable
-            Chromosomes chr1 = chromosomesN[_personaId1];
-            Chromosomes chr2 = chromosomesN[_personaId2];
             // get gametes
-            ChromosomeStructure[4] memory persona1_gametes = meiosis(chr1, seed);
-            ChromosomeStructure[4] memory persona2_gametes = meiosis(chr2, seed);
+            Genetics.Chromosome[4] memory persona1_gametes;
+            Genetics.Chromosome[4] memory persona2_gametes;
+
+            (persona1_gametes, rand) = ChromosomeLib.meiosis(chromosomesN[_personaId1], seed, rArgs);
+            (persona2_gametes, rand) = ChromosomeLib.meiosis(chromosomesN[_personaId2], rand, rArgs);
 
             // randomly select 1 gamete from each
-            uint256 gamete1_index = random(seed);
-            uint256 gamete2_index = random(gamete1_index);
-            seed = gamete2_index;
+            uint256 gamete1_index = Random.random(rand, rArgs);
+            uint256 gamete2_index = Random.random(gamete1_index, rArgs);
 
-            ChromosomeStructure memory selected_gamet1 = persona1_gametes[gamete1_index % 4];
-            ChromosomeStructure memory selected_gamet2 = persona2_gametes[gamete2_index % 4];
+            seed = gamete2_index; // update seed state value
 
-            // make new chromosomes
-            Chromosomes newChr = new Chromosomes(
-                selected_gamet1.autosomes,
-                selected_gamet1.x,
-                selected_gamet1.y,
-                selected_gamet2.autosomes,
-                selected_gamet2.x,
-                selected_gamet2.y
-            );
+            Genetics.Chromosome memory selected_gamet1 = persona1_gametes[gamete1_index % 4];
+            Genetics.Chromosome memory selected_gamet2 = persona2_gametes[gamete2_index % 4];
 
             uint256 newPersonaId = _makeNewPersona(_receiver, personaId++);
-            chromosomesN[newPersonaId] = newChr;
+            _copyChromosomeToStorage(newPersonaId, [selected_gamet1, selected_gamet2]);
 
             emit NewPersonaBorn(newPersonaId, _receiver);
+
             return newPersonaId;
         } else {
             revert MetaPersona_IncompatiblePersonas();
@@ -143,18 +140,32 @@ contract MetaPersona is ERC1155, AccessControl, PersonaBase {
         uint256[37] memory _eve_m_a,
         uint256[2] memory _eve_m_x
     ) external virtual onlyRole(GOD_ROLE) {
-        uint256[2] memory emptyX;
         // make Adam persona
-        Chromosomes adam = new Chromosomes(_adam_p_a, emptyX, _adam_p_y, _adam_m_a, _adam_m_x, uint192(0));
+        Genetics.Chromosome memory adam_p;
+        Genetics.Chromosome memory adam_m;
+
+        Genetics.Chromosome memory eve_p;
+        Genetics.Chromosome memory eve_m;
+
+        adam_p.autosomes = _adam_p_a;
+        adam_p.y = _adam_p_y;
+
+        adam_m.autosomes = _adam_m_a;
+        adam_m.x = _adam_m_x;
+
+        eve_p.autosomes = _eve_p_a;
+        eve_p.x = _eve_p_x;
+
+        eve_m.autosomes = _eve_m_a;
+        eve_m.x = _eve_m_x;
 
         _makeNewPersona(msg.sender, ADAM);
-        chromosomesN[ADAM] = adam;
+        _copyChromosomeToStorage(ADAM, [adam_p, adam_m]);
 
         // make Eve persona
-        Chromosomes eve = new Chromosomes(_eve_p_a, _eve_p_x, uint192(0), _eve_m_a, _eve_m_x, uint192(0));
 
         _makeNewPersona(msg.sender, EVE);
-        chromosomesN[EVE] = eve;
+        _copyChromosomeToStorage(EVE, [eve_p, eve_m]);
 
         emit Genesis(block.timestamp);
         personaId += 2;
@@ -168,5 +179,28 @@ contract MetaPersona is ERC1155, AccessControl, PersonaBase {
         address _receiver
     ) external virtual returns (uint256) {
         return _breed(_personaId1, _personaId2, _personaOwner1, _personaOwner2, _receiver);
+    }
+
+    function _copyChromosomeToStorage(uint256 _personaId, Genetics.Chromosome[2] memory _chr) private {
+        // check that if this personaId has chromosomes, if it has, revert
+        if (
+            chromosomesN[_personaId][0].y > 0
+                && (chromosomesN[_personaId][0].x[0] > 0 || chromosomesN[_personaId][0].x[1] > 0)
+        ) {
+            revert MetaPersona_InvalidGeneticCombination();
+        }
+
+        // x and y
+        chromosomesN[_personaId][0].y = _chr[0].y;
+        chromosomesN[_personaId][0].x[0] = _chr[0].x[0];
+        chromosomesN[_personaId][0].x[1] = _chr[0].x[1];
+        chromosomesN[_personaId][1].y = _chr[1].y;
+        chromosomesN[_personaId][1].x[0] = _chr[1].x[0];
+        chromosomesN[_personaId][1].x[1] = _chr[1].x[1];
+        // autosomes
+        for (uint256 i = 0; i < 37; i++) {
+            chromosomesN[_personaId][0].autosomes[i] = _chr[0].autosomes[i];
+            chromosomesN[_personaId][1].autosomes[i] = _chr[1].autosomes[i];
+        }
     }
 }

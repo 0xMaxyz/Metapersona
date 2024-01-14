@@ -2,7 +2,10 @@
 pragma solidity ^0.8.23;
 
 import {Script, console2} from "forge-std/Script.sol";
+import "forge-std/console.sol";
+
 import "../src/MetaPersona.sol";
+import "../src/lib/Genetics.sol";
 import "../test/MetaPersona.t.sol";
 
 contract MetaPersonaScript is Script {
@@ -20,7 +23,7 @@ contract MetaPersonaScript is Script {
 
         // initialize input values
         fillAutosome(_adam_p_a);
-        _adam_p_y = uint192(1);
+        _adam_p_y = uint192(rand());
         fillAutosome(_adam_m_a);
         fillX(_adam_m_x);
         fillAutosome(_eve_p_a);
@@ -32,24 +35,46 @@ contract MetaPersonaScript is Script {
         address deployer = vm.envAddress("DEPLOYER");
         string memory uri = vm.envString("URI");
 
+        uint256 seed = rand();
+
         vm.startBroadcast(deployerPrivateKey);
 
-        MetaPersona metaPersona = new MetaPersona(deployer, uri);
+        MetaPersona metaPersona = new MetaPersona(deployer, uri, seed);
 
         metaPersona.genesis(_adam_p_a, _adam_p_y, _adam_m_a, _adam_m_x, _eve_p_a, _eve_p_x, _eve_m_a, _eve_m_x);
 
         vm.stopBroadcast();
     }
 
-    function fillAutosome(uint256[37] memory _array) private view {
+    function fillAutosome(uint256[37] memory _array) private {
         for (uint256 i = 0; i < _array.length; i++) {
-            _array[i] = i;
+            _array[i] = rand();
         }
     }
 
-    function fillX(uint256[2] memory _array) private view {
+    function fillX(uint256[2] memory _array) private {
         for (uint256 i = 0; i < _array.length; i++) {
-            _array[i] = i;
+            _array[i] = rand();
         }
+    }
+
+    function rand() private returns (uint256) {
+        // openssl rand -hex 32
+        string[] memory inputs = new string[](4);
+        inputs[0] = "openssl";
+        inputs[1] = "rand";
+        inputs[2] = "-hex";
+        inputs[3] = "32";
+
+        bytes memory res = vm.ffi(inputs);
+        return bytesToUint256(res);
+    }
+
+    function bytesToUint256(bytes memory data) private pure returns (uint256) {
+        uint256 result;
+        assembly {
+            result := mload(add(data, 32))
+        }
+        return result;
     }
 }
