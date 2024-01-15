@@ -6,9 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./lib/Genetics.sol";
 
 contract MetaPersona is ERC1155, AccessControl {
-    bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant GOD_ROLE = keccak256("GOD_ROLE");
+    bytes32 public constant SPAWN_ROLE = keccak256("SPAWN_ROLE");
 
     uint256 public constant METAPERSONATOKEN = 0;
     uint256 public constant ADAM = 1;
@@ -19,15 +17,14 @@ contract MetaPersona is ERC1155, AccessControl {
 
     constructor(address admin, string memory uri, uint256 _seed) ERC1155(uri) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(GOD_ROLE, admin);
-        _grantRole(MINTER_ROLE, admin);
+        _grantRole(SPAWN_ROLE, admin);
 
         // initialize storage
         seed = _seed;
         personaId = 1;
     }
 
-    function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
+    function setURI(string memory newuri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setURI(newuri);
     }
 
@@ -45,12 +42,12 @@ contract MetaPersona is ERC1155, AccessControl {
 
     mapping(uint256 => Genetics.Chromosome[2]) chromosomesN;
 
-    function _makeNewPersona(address _owner, uint256 _personaId) internal returns (uint256) {
+    function _makeNewPersona(address _owner, uint256 _personaId) private returns (uint256) {
         _mint(_owner, _personaId, 1, "");
         return _personaId;
     }
 
-    function _revertIfNotOwned(address _ownerAddress, uint256 _personaId) internal view {
+    function _revertIfNotOwned(address _ownerAddress, uint256 _personaId) private view {
         if (balanceOf(_ownerAddress, _personaId) != 1) {
             revert MetaPersona_PersonaNotFound();
         }
@@ -58,6 +55,7 @@ contract MetaPersona is ERC1155, AccessControl {
 
     function getChromosomesN(address _owner, uint256 _personaId)
         external
+        view
         virtual
         returns (Genetics.Chromosome[2] memory)
     {
@@ -65,7 +63,7 @@ contract MetaPersona is ERC1155, AccessControl {
     }
 
     function _getChromosomesN(address _owner, uint256 _personaId)
-        internal
+        private
         view
         returns (Genetics.Chromosome[2] memory)
     {
@@ -74,16 +72,16 @@ contract MetaPersona is ERC1155, AccessControl {
         return chromosomesN[_personaId];
     }
 
-    // breeding
+    // spawning
     event NewPersonaBorn(uint256 indexed _personaId, address indexed receiver);
 
-    function _breed(
+    function _spawn(
         uint256 _personaId1,
         uint256 _personaId2,
         address _personaOwner1,
         address _personaOwner2,
         address _receiver
-    ) internal returns (uint256) {
+    ) private returns (uint256) {
         // make sure that these persona's are owned by the input owners, otherwise revert
         _revertIfNotOwned(_personaOwner1, _personaId1);
         _revertIfNotOwned(_personaOwner2, _personaId2);
@@ -102,7 +100,7 @@ contract MetaPersona is ERC1155, AccessControl {
             rArgs.Prevrandao = block.prevrandao;
             rArgs.Sender = msg.sender;
             rArgs.Timestamp = block.timestamp;
-            // breedable
+            // spawnable
             // get gametes
             Genetics.Chromosome[4] memory persona1_gametes;
             Genetics.Chromosome[4] memory persona2_gametes;
@@ -139,7 +137,7 @@ contract MetaPersona is ERC1155, AccessControl {
         uint256[2] memory _eve_p_x,
         uint256[37] memory _eve_m_a,
         uint256[2] memory _eve_m_x
-    ) external virtual onlyRole(GOD_ROLE) {
+    ) external virtual onlyRole(SPAWN_ROLE) {
         // make Adam persona
         Genetics.Chromosome memory adam_p;
         Genetics.Chromosome memory adam_m;
@@ -171,14 +169,14 @@ contract MetaPersona is ERC1155, AccessControl {
         personaId += 2;
     }
 
-    function breed(
+    function spawn(
         uint256 _personaId1,
         uint256 _personaId2,
         address _personaOwner1,
         address _personaOwner2,
         address _receiver
-    ) external virtual returns (uint256) {
-        return _breed(_personaId1, _personaId2, _personaOwner1, _personaOwner2, _receiver);
+    ) external returns (uint256) {
+        return _spawn(_personaId1, _personaId2, _personaOwner1, _personaOwner2, _receiver);
     }
 
     function _copyChromosomeToStorage(uint256 _personaId, Genetics.Chromosome[2] memory _chr) private {
@@ -201,6 +199,37 @@ contract MetaPersona is ERC1155, AccessControl {
         for (uint256 i = 0; i < 37; i++) {
             chromosomesN[_personaId][0].autosomes[i] = _chr[0].autosomes[i];
             chromosomesN[_personaId][1].autosomes[i] = _chr[1].autosomes[i];
+        }
+    }
+
+    function spawn(
+        uint256 _personaId1,
+        uint256 _personaId2,
+        address _personaOwner1,
+        address _personaOwner2,
+        address _receiver,
+        Genetics.Chromosome[2] calldata _chr
+    ) external onlyRole(SPAWN_ROLE) returns (uint256) {
+        _revertIfNotOwned(_personaOwner1, _personaId1);
+        _revertIfNotOwned(_personaOwner2, _personaId2);
+
+        uint256 newPersonaId = _makeNewPersona(_receiver, personaId++);
+        _copyChromosomeToStorage(newPersonaId, _chr);
+
+        emit NewPersonaBorn(newPersonaId, _receiver);
+
+        return newPersonaId;
+    }
+
+    function addSpawner(address _spawner) external onlyRole(SPAWN_ROLE) {
+        if (!hasRole(SPAWN_ROLE, _spawner)) {
+            grantRole(SPAWN_ROLE, _spawner);
+        }
+    }
+
+    function removeSpawner(address _spawner) external onlyRole(SPAWN_ROLE) {
+        if (hasRole(SPAWN_ROLE, _spawner)) {
+            revokeRole(SPAWN_ROLE, _spawner);
         }
     }
 }

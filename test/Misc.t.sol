@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 import {Test, console2} from "forge-std/Test.sol";
+import "../src/lib/Genetics.sol";
 
 contract MiscTests is Test {
     function setUp() public {}
@@ -18,5 +19,9 @@ contract MiscTests is Test {
         result = (input << 224) >> 224;
 
         assertEq(result, lsh);
+    }
+
+    function test_EncodeChromosomes() public {
+        Genetics.Chromosome[2] memory _chr;
     }
 }

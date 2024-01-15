@@ -29,23 +29,11 @@ contract MetaPersonaTest is Test {
 
         assertEq(isAdmin, true);
 
-        // God
-        bytes32 god = metaPersona.GOD_ROLE();
-        bool isGod = metaPersona.hasRole(god, deployerAddress);
+        // Spawn
+        bytes32 spwn = metaPersona.SPAWN_ROLE();
+        bool isspwn = metaPersona.hasRole(spwn, deployerAddress);
 
-        assertEq(isGod, true);
-    }
-
-    function fillAutosome(uint256[37] memory _array) public pure {
-        for (uint256 i = 0; i < _array.length; i++) {
-            _array[i] = i;
-        }
-    }
-
-    function fillX(uint256[2] memory _array) public pure {
-        for (uint256 i = 0; i < _array.length; i++) {
-            _array[i] = i;
-        }
+        assertEq(isspwn, true);
     }
 
     function genesis() private {
@@ -61,7 +49,7 @@ contract MetaPersonaTest is Test {
         uint256[2] memory _eve_m_x;
 
         fillAutosome(_adam_p_a);
-        _adam_p_y = uint192(1);
+        _adam_p_y = uint192(rand());
         fillAutosome(_adam_m_a);
         fillX(_adam_m_x);
         fillAutosome(_eve_p_a);
@@ -82,19 +70,76 @@ contract MetaPersonaTest is Test {
         assertEq(evB, 1);
     }
 
-    function test_breeding() public {
+    function test_spawning() public {
         genesis();
 
         vm.startPrank(deployerAddress);
-        uint256 newPersonaId = metaPersona.breed(1, 2, deployerAddress, deployerAddress, deployerAddress);
+        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress);
         vm.stopPrank();
 
         assertEq(newPersonaId, 3);
 
         vm.startPrank(deployerAddress);
-        newPersonaId = metaPersona.breed(1, 2, deployerAddress, deployerAddress, deployerAddress);
+        newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress);
         vm.stopPrank();
 
         assertEq(newPersonaId, 4);
+    }
+
+    function test_OffchainSpawning() public {
+        genesis();
+
+        (address spawner,) = makeAddrAndKey("spawner");
+
+        vm.startPrank(deployerAddress);
+        metaPersona.addSpawner(spawner);
+        bytes32 spwn = metaPersona.SPAWN_ROLE();
+        bool isspwn = metaPersona.hasRole(spwn, spawner);
+        assertEq(isspwn, true);
+
+        // create new persona using onchain calculation
+        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress);
+        // get the chromosomes of this new persona
+        Genetics.Chromosome[2] memory _chr = metaPersona.getChromosomesN(deployerAddress, newPersonaId);
+        vm.stopPrank();
+
+        vm.startPrank(spawner);
+        newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress, _chr);
+        vm.stopPrank();
+
+        assertEq(newPersonaId, 4);
+    }
+
+    function rand() public returns (uint256) {
+        string[] memory inputs = new string[](6);
+        inputs[0] = "openssl";
+        inputs[1] = "rand";
+        inputs[2] = "-rand";
+        inputs[3] = "/dev/random";
+        inputs[4] = "-hex";
+        inputs[5] = "32";
+
+        bytes memory res = vm.ffi(inputs);
+        return bytesToUint256(res);
+    }
+
+    function bytesToUint256(bytes memory data) private pure returns (uint256) {
+        uint256 result;
+        assembly {
+            result := mload(add(data, 32))
+        }
+        return result;
+    }
+
+    function fillAutosome(uint256[37] memory _array) public {
+        for (uint256 i = 0; i < _array.length; i++) {
+            _array[i] = rand();
+        }
+    }
+
+    function fillX(uint256[2] memory _array) public {
+        for (uint256 i = 0; i < _array.length; i++) {
+            _array[i] = rand();
+        }
     }
 }

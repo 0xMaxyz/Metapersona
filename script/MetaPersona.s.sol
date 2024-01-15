@@ -6,11 +6,8 @@ import "forge-std/console.sol";
 
 import "../src/MetaPersona.sol";
 import "../src/lib/Genetics.sol";
-import "../test/MetaPersona.t.sol";
 
 contract MetaPersonaScript is Script {
-    MetaPersonaTest mpt;
-
     function run() public {
         uint256[37] memory _adam_p_a;
         uint192 _adam_p_y;
@@ -46,25 +43,14 @@ contract MetaPersonaScript is Script {
         vm.stopBroadcast();
     }
 
-    function fillAutosome(uint256[37] memory _array) private {
-        for (uint256 i = 0; i < _array.length; i++) {
-            _array[i] = rand();
-        }
-    }
-
-    function fillX(uint256[2] memory _array) private {
-        for (uint256 i = 0; i < _array.length; i++) {
-            _array[i] = rand();
-        }
-    }
-
-    function rand() private returns (uint256) {
-        // openssl rand -hex 32
-        string[] memory inputs = new string[](4);
+    function rand() public returns (uint256) {
+        string[] memory inputs = new string[](6);
         inputs[0] = "openssl";
         inputs[1] = "rand";
-        inputs[2] = "-hex";
-        inputs[3] = "32";
+        inputs[2] = "-rand";
+        inputs[3] = "/dev/random";
+        inputs[4] = "-hex";
+        inputs[5] = "32";
 
         bytes memory res = vm.ffi(inputs);
         return bytesToUint256(res);
@@ -76,5 +62,17 @@ contract MetaPersonaScript is Script {
             result := mload(add(data, 32))
         }
         return result;
+    }
+
+    function fillAutosome(uint256[37] memory _array) public {
+        for (uint256 i = 0; i < _array.length; i++) {
+            _array[i] = rand();
+        }
+    }
+
+    function fillX(uint256[2] memory _array) public {
+        for (uint256 i = 0; i < _array.length; i++) {
+            _array[i] = rand();
+        }
     }
 }
