@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using MetaPersonaApi.Data.Contracts;
 using MetaPersonaApi.Data.Repositories;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MetaPersonaApi;
 
@@ -28,7 +29,7 @@ public class Program
         {
             options.UseNpgsql(conn);
         });
-        builder.Services.AddAuthorization();
+        
 
         builder.Services.AddIdentityCore<MetaPersonaIdentityUser>()
         .AddRoles<IdentityRole<Guid>>()
@@ -45,12 +46,21 @@ public class Program
                 ValidateIssuer = true,
                 ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = builder.Configuration["JwtSetings:Audience"],
+                ValidAudience = builder.Configuration["JwtSettings:Audience"],
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JKEY"]))
             };
         });
+
+        builder.Services.AddAuthorization(options =>
+        {
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+            .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+            .RequireAuthenticatedUser()
+            .Build();
+        });
+
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         builder.Services.AddScoped<IAuthManager, AuthManager>();
         // Repositories
@@ -74,10 +84,11 @@ public class Program
         app.UseSwaggerUI();
         //}
 
-        app.UseHttpsRedirection();
-
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.UseHttpsRedirection();
+
 
         // Map API Endpoints
         app.MapAuthenticationEndpoints();

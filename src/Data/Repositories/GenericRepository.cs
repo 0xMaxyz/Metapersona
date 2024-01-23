@@ -51,4 +51,10 @@ public class GenericRepository<TEntity>(MetaPersonaDbContext metaPersonaDbContex
         _dbContext.Update(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task UpdateRangeAsync(params TEntity[] entity)
+    {
+        _dbContext.UpdateRange(entity);
+        await _dbContext.SaveChangesAsync();
+    }
 }

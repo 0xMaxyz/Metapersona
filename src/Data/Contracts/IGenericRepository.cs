@@ -11,4 +11,5 @@ public interface IGenericRepository<TEntity> where TEntity : Entity
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
     Task<bool> Exists(Guid id, CancellationToken cancellationToken = default);
+    public Task UpdateRangeAsync(params TEntity[] entity);
 }

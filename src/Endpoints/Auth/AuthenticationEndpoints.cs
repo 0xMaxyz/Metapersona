@@ -19,6 +19,7 @@ public static class AuthenticationEndpoints
 
             return Results.Ok(response);
         })
+            .AllowAnonymous()
             .WithTags("Authentication")
             .WithName("Login")
             .Produces(StatusCodes.Status200OK)
