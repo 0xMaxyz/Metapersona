@@ -3,6 +3,7 @@ using System;
 using MetaPersonaApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MetaPersonaApi.Migrations
 {
     [DbContext(typeof(MetaPersonaDbContext))]
-    partial class MetaPersonaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240123110458_AddNormalizedKeyandValueToConfigEntity")]
+    partial class AddNormalizedKeyandValueToConfigEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -182,13 +185,13 @@ namespace MetaPersonaApi.Migrations
                         {
                             Id = new Guid("8c748df8-6148-45f8-b286-f0a74078aeb0"),
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "918b6c82-f68a-4ea8-be50-4dcb4ef3f095",
+                            ConcurrencyStamp = "3f778b8e-bf98-4a06-8516-12c04453155b",
                             Email = "omni001@proton.me",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "OMNI001@PROTON.ME",
                             NormalizedUserName = "OMNI001@PROTON.ME",
-                            PasswordHash = "AQAAAAIAAYagAAAAEPV2mSfIkeDNAZ1Y+PGRI33RrF8q/JVsk2pS/fw8UNde5oKPPCECU5hXo07z2zo1WQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEADfgzNXL03+/mTvK5TjEBQBKR17nKN08Xk2Ea8gR99brmOtrNuJ4fFOTfuwl1Ts8Q==",
                             PhoneNumberConfirmed = false,
                             TwoFactorEnabled = false,
                             UserName = "omni001@proton.me",
@@ -319,13 +322,6 @@ namespace MetaPersonaApi.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = new Guid("8c748df8-6148-45f8-b286-f0a74078aeb0"),
-                            RoleId = new Guid("8c748df8-6148-45f8-b286-f0a74078aeb1")
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>

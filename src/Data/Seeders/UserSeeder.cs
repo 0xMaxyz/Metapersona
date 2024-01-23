@@ -10,8 +10,7 @@ internal class UserSeeder : IEntityTypeConfiguration<MetaPersonaIdentityUser>
     public void Configure(EntityTypeBuilder<MetaPersonaIdentityUser> builder)
     {
         var hasher = new PasswordHasher<MetaPersonaIdentityUser>();
-
-        builder.HasData(
+            builder.HasData(
             new MetaPersonaIdentityUser
             {
                 Id = Guid.Parse(Constants.AdminUserId),

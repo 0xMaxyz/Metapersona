@@ -1,4 +1,5 @@
 ﻿using MetaPersonaApi.Data.Seeder;
+using MetaPersonaApi.Data.Seeders;
 using MetaPersonaApi.Entities;
 using MetaPersonaApi.Entities.Configuration;
 using MetaPersonaApi.Identity;
@@ -25,7 +26,7 @@ public class MetaPersonaDbContext(DbContextOptions<MetaPersonaDbContext> options
         var entities = ChangeTracker.Entries()
             .Where(x => x.Entity is Entity)
             .Where(x => x.State is EntityState.Added || x.State is EntityState.Modified)
-            .Select(x => new { Entity = x.Entity as Entity, State = x.State });
+            .Select(x => new { Entity = x.Entity as Entity, x.State });
 
         var currentUserId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var currentUserName = _httpContextAccessor.HttpContext?.User.Identity?.Name;
@@ -66,12 +67,27 @@ public class MetaPersonaDbContext(DbContextOptions<MetaPersonaDbContext> options
     {
         base.OnModelCreating(builder);
 
-        builder
-            .ConfigureMetaPersonaIdentityUser()
-            .ConfigureConfigEntity()
-            // Data seeder
-            .ApplyConfiguration(new UserSeeder())
-            .ApplyConfiguration(new RoleSeeder());
+        builder.ConfigEntities().SeedData();
     }
     DbSet<ConfigEntity> configEntities { get; set; }
+}
+
+public static class DbcontextExtensions
+{
+
+    public static ModelBuilder ConfigEntities(this ModelBuilder builder)
+    {
+        return builder
+            .ConfigureMetaPersonaIdentityUser()
+            .ConfigureConfigEntity();
+    }
+
+    public static ModelBuilder SeedData(this ModelBuilder builder)
+    {
+        return builder
+            .ApplyConfiguration(new ConfigSeeder())
+            .ApplyConfiguration(new UserSeeder())
+            .ApplyConfiguration(new RoleSeeder())
+            .ApplyConfiguration(new UserRoleSeeder());
+    }
 }

@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using MetaPersonaApi.Data.Contracts;
+using MetaPersonaApi.Data.Repositories;
 
 namespace MetaPersonaApi;
 
@@ -51,6 +53,8 @@ public class Program
         });
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         builder.Services.AddScoped<IAuthManager, AuthManager>();
+        // Repositories
+        builder.Services.AddScoped<IConfigEntityRepository, ConfigEntityRepository>();
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();

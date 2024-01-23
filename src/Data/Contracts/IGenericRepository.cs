@@ -2,12 +2,13 @@
 
 namespace MetaPersonaApi.Data.Contracts;
 
-public interface IGenericRepository<TEntity, TKey> where TEntity : Entity
+public interface IGenericRepository<TEntity> where TEntity : Entity
 {
-    Task<TEntity> GetAsync(TKey id);
-    Task<List<TEntity>> GetAllAsync();
-    Task<TEntity> CreateAsync(TEntity entity);
-    Task DeleteAsync(TKey id);
-    Task UpdateAsync(TKey id);
-    Task<bool> Exists(TKey id);
+    Task<TEntity?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default);
+    Task AddRangeAsync(params TEntity[] entity);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
+    Task<bool> Exists(Guid id, CancellationToken cancellationToken = default);
 }

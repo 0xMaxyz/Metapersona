@@ -1,41 +1,54 @@
 ﻿using MetaPersonaApi.Data.Contracts;
 using MetaPersonaApi.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace MetaPersonaApi.Data.Repositories;
 
-public class GenericRepository<TEntity, TKey>(MetaPersonaDbContext metaPersonaDbContext) : IGenericRepository<TEntity, TKey> where TEntity : Entity
+public class GenericRepository<TEntity>(MetaPersonaDbContext metaPersonaDbContext) : IGenericRepository<TEntity> where TEntity : Entity
 {
     protected readonly MetaPersonaDbContext _dbContext = metaPersonaDbContext;
 
-    public async Task<TEntity> CreateAsync(TEntity entity)
+    public async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        await _dbContext.AddAsync(entity);
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.AddAsync(entity, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
-    public async Task DeleteAsync(TKey id)
+    public async Task AddRangeAsync(params TEntity[] entity)
     {
-        throw new NotImplementedException();
+        await _dbContext.AddRangeAsync(entity);
+        await _dbContext.SaveChangesAsync();
     }
 
-    public async Task<bool> Exists(TKey id)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var entity = await GetAsync(id, cancellationToken);
+        if (entity != null)
+        {
+            _dbContext.Set<TEntity>().Remove(entity);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
     }
 
-    public async Task<List<TEntity>> GetAllAsync()
+    public async Task<bool> Exists(Guid id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Set<TEntity>().AnyAsync(x => x.Id == id, cancellationToken);
     }
 
-    public async Task<TEntity> GetAsync(TKey id)
+    public async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Set<TEntity>().ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(TKey id)
+    public async Task<TEntity?> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Set<TEntity>().FindAsync([id], cancellationToken: cancellationToken);
+    }
+
+    public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
+    {
+        _dbContext.Update(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
