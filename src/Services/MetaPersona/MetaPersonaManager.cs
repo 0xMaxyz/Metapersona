@@ -2,10 +2,10 @@
 using MetaPersonaApi.Data.DTOs;
 using MetaPersonaApi.Services.MetaPersona.DTOs;
 using MetaPersonaApi.Services.MetaPersona.Functions;
+using MetaPersonaApi.Services.MetaPersona.Genetics;
+using MetaPersonaApi.Services.MetaPersona.Genetics.Enums;
 using MetaPersonaApi.Services.MetaPersona.SolidityStructs;
-using MetaPersonaApi.Utils;
 using Nethereum.Contracts.Standards.ERC1155.ContractDefinition;
-using Nethereum.Web3;
 using System.Numerics;
 
 namespace MetaPersonaApi.Services.MetaPersona;
@@ -21,7 +21,7 @@ public class MetaPersonaManager : IMetaPersonaManager
         // get RPC_URL
         var rpcUrl = _configuration["RPC_URL"];
 
-        _web3 = new Web3(rpcUrl, _logger);
+        _web3 = new Nethereum.Web3.Web3(rpcUrl, _logger);
     }
     private readonly ILogger<MetaPersonaManager> _logger;
     private readonly IConfigEntityRepository _configEntityRepository;
@@ -32,6 +32,31 @@ public class MetaPersonaManager : IMetaPersonaManager
 
     public async Task<BigInteger> SpawnAsync(SpawnDto spawnDto)
     {
+        var fertilizeResult = await Fertilize(spawnDto);
+        if (fertilizeResult.Length == 0)
+        {
+            throw new Exception("Not spawned, check input");
+        }
+
+        var spawnFunction = new SpawnFunction
+        {
+            PersonaId1 = spawnDto.Persona1Id,
+            PersonaId2 = spawnDto.Persona2Id,
+            PersonaOwner1 = spawnDto.Persona1OwnerAddress,
+            PersonaOwner2 = spawnDto.Persona2OwnerAddress,
+            Receiver = spawnDto.ReceiverAddress,
+            Chromosomes = fertilizeResult
+        };
+        var contractAddress = await GetContractAddress();
+
+        var spawnHandler = _web3.Eth.GetContractQueryHandler<SpawnFunction>();
+        var newId = await spawnHandler.QueryAsync<BigInteger>(contractAddress, spawnFunction);
+
+        return newId;
+    }
+
+    private async Task<Chromosome[]> Fertilize(SpawnDto spawnDto)
+    {
         // Check ownership of personas
         var ownership1 = await IsOwnedByRequesterAsync(spawnDto.Persona1OwnerAddress, spawnDto.Persona1Id);
         var ownership2 = await IsOwnedByRequesterAsync(spawnDto.Persona2OwnerAddress, spawnDto.Persona2Id);
@@ -41,8 +66,27 @@ public class MetaPersonaManager : IMetaPersonaManager
             // get chromosomes of persona1 and persona2
             var persona1Chromosomes = await GetChromosomes(spawnDto.Persona1OwnerAddress, spawnDto.Persona1Id);
             var persona2Chromosomes = await GetChromosomes(spawnDto.Persona2OwnerAddress, spawnDto.Persona2Id);
+
+            // check gender
+            var persona1Gender = Meiosis.GetGender(persona1Chromosomes);
+            var persona2Gender = Meiosis.GetGender(persona2Chromosomes);
+
+            if (IsGendersValid(persona1Gender, persona2Gender))
+            {
+                var gametes1 = Meiosis.DoMeiosis(persona1Chromosomes);
+                var gametes2 = Meiosis.DoMeiosis(persona2Chromosomes);
+
+                return [gametes1[Random.Shared.Next(0, 3)], gametes2[Random.Shared.Next(0, 3)]];
+            }
         }
-        return BigInteger.Zero;
+        return [];
+    }
+
+    private static bool IsGendersValid(Gender g1, Gender g2)
+    {
+
+        return (g1 == Gender.Female && g2 == Gender.Male) || (g1 == Gender.Male && g2 == Gender.Female);
+
     }
 
     private async Task<bool> IsOwnedByRequesterAsync(string ownerAddress, BigInteger personaId)
@@ -81,7 +125,7 @@ public class MetaPersonaManager : IMetaPersonaManager
         }
     }
 
-    private async Task<List<Chromosome>> GetChromosomes(string ownerAddress, BigInteger personaId)
+    private async Task<Chromosome[]> GetChromosomes(string ownerAddress, BigInteger personaId)
     {
         var getChromosomesFunction = new GetChromosomesFunction
         {
@@ -91,7 +135,7 @@ public class MetaPersonaManager : IMetaPersonaManager
         var contractAddress = await GetContractAddress();
 
         var getChromosomeHandler = _web3.Eth.GetContractQueryHandler<GetChromosomesFunction>();
-        var chromosomes = await getChromosomeHandler.QueryAsync<GetChromosomesOutputDTO>(contractAddress, getChromosomesFunction); 
+        var chromosomes = await getChromosomeHandler.QueryAsync<GetChromosomesOutputDTO>(contractAddress, getChromosomesFunction);
         return chromosomes.Chromosomes;
     }
 }

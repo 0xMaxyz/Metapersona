@@ -21,5 +21,5 @@ public class SpawnFunctionBase : FunctionMessage
     [Parameter("address", "_receiver", 5)]
     public virtual string Receiver { get; set; }
     [Parameter("tuple[2]", "_chr", 6)]
-    public virtual List<Chromosome> Chromosomes { get; set; }
+    public virtual Chromosome[] Chromosomes { get; set; }
 }
