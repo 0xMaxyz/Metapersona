@@ -6,7 +6,8 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "JKEY": "7a29db8b-5ddd-464e-938c-fa7ac97eaece-d09d8d8a-2a7a-42bb-821d-95dd2bafcb8b-2fcbcd2c-82e9-40ee-98fe-6731347941cd"
+        "JKEY": "7a29db8b-5ddd-464e-938c-fa7ac97eaece-d09d8d8a-2a7a-42bb-821d-95dd2bafcb8b-2fcbcd2c-82e9-40ee-98fe-6731347941cd",
+        "RPC_URL": "https://testnet-rpc.areon.network"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5099"
@@ -17,7 +18,8 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "JKEY": "7a29db8b-5ddd-464e-938c-fa7ac97eaece-d09d8d8a-2a7a-42bb-821d-95dd2bafcb8b-2fcbcd2c-82e9-40ee-98fe-6731347941cd"
+        "JKEY": "7a29db8b-5ddd-464e-938c-fa7ac97eaece-d09d8d8a-2a7a-42bb-821d-95dd2bafcb8b-2fcbcd2c-82e9-40ee-98fe-6731347941cd",
+        "RPC_URL": "https://testnet-rpc.areon.network"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7049;http://localhost:5099"

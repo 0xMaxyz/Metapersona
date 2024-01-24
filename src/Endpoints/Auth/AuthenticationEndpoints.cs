@@ -1,7 +1,6 @@
 ﻿using MetaPersonaApi.Data.DTOs;
-using MetaPersonaApi.Services;
+using MetaPersonaApi.Services.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi.Any;
 
 namespace MetaPersonaApi.Endpoints.Auth;
 

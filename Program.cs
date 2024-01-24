@@ -1,7 +1,6 @@
 
 using MetaPersonaApi.Data;
 using MetaPersonaApi.Identity;
-using MetaPersonaApi.Services;
 using MetaPersonaApi.Endpoints.Auth;
 using MetaPersonaApi.Endpoints.Administration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,6 +12,8 @@ using System.Text;
 using MetaPersonaApi.Data.Contracts;
 using MetaPersonaApi.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using MetaPersonaApi.Services.Authentication;
+using MetaPersonaApi.Services.MetaPersona;
 
 namespace MetaPersonaApi;
 
@@ -62,9 +63,10 @@ public class Program
             .RequireAuthenticatedUser()
             .Build();
         });
-
+        builder.Services.AddAutoMapper(typeof(Mappings.Mappings));
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         builder.Services.AddScoped<IAuthManager, AuthManager>();
+        builder.Services.AddScoped<IMetaPersonaManager, MetaPersonaManager>();
         // Repositories
         builder.Services.AddScoped<IConfigEntityRepository, ConfigEntityRepository>();
 

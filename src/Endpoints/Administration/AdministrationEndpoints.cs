@@ -4,6 +4,8 @@ using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Web3.Accounts;
 using MetaPersonaApi.Entities.Config;
 using MetaPersonaApi.Utils;
+using MetaPersonaApi.Data.DTOs;
+using MetaPersonaApi.Services.Authentication;
 
 namespace MetaPersonaApi.Endpoints.Administration;
 
@@ -41,7 +43,7 @@ public static class AdministrationEndpoints
         })
             .WithTags("Administration")
             .WithName("WalletAddress")
-            .Produces(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
 
         routes.MapPost("/api/admin/contract", [Authorize(Roles = "Administrator")] async (string contractAddress, IConfigEntityRepository configRepository) =>
@@ -60,6 +62,31 @@ public static class AdministrationEndpoints
             .WithName("ContractAddress")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        routes.MapGet("/api/admin/roles", [Authorize(Roles = "Administrator")] async (IAuthManager authManager) =>
+        {
+            var roles = await authManager.GetRoles();
+            return Results.Ok(roles);
+        })
+            .WithTags("Administration")
+            .WithName("Get Roles")
+            .Produces<List<RoleDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        routes.MapPost("/api/admin/addUserRole", [Authorize(Roles = "Administrator")] async (UserRoleDto userRoleDto, IAuthManager authManager) =>
+        {
+            var response = await authManager.AddUserRoleAsync(userRoleDto);
+            if (response != null)
+            {
+                return Results.BadRequest(response);
+            }
+            return Results.Ok();
+        })
+            .WithTags("Administration")
+            .WithName("Add user to role")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ErrorResponseDto>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
     }
 

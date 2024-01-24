@@ -1,4 +1,5 @@
-﻿using MetaPersonaApi.Data.DTOs;
+﻿using AutoMapper;
+using MetaPersonaApi.Data.DTOs;
 using MetaPersonaApi.Identity;
 using MetaPersonaApi.Utils;
 using Microsoft.AspNetCore.Identity;
@@ -8,12 +9,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.MetaPersona;
 using System.Security.Claims;
 using System.Text;
-namespace MetaPersonaApi.Services;
+namespace MetaPersonaApi.Services.Authentication;
 
-public class AuthManager(UserManager<MetaPersonaIdentityUser> userManager, IConfiguration configuration) : IAuthManager
+public class AuthManager(UserManager<MetaPersonaIdentityUser> userManager, RoleManager<IdentityRole<Guid>> roleManager, IConfiguration configuration, IMapper mapper) : IAuthManager
 {
     private readonly UserManager<MetaPersonaIdentityUser> _userManager = userManager;
+    private readonly RoleManager<IdentityRole<Guid>> _roleManager = roleManager;
     private readonly IConfiguration _configuration = configuration;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<AuthResponseDto> Login(LoginDto loginDto)
     {
@@ -61,8 +64,32 @@ public class AuthManager(UserManager<MetaPersonaIdentityUser> userManager, IConf
         return result.Errors;
     }
 
+    public async Task<List<RoleDto>> GetRoles(CancellationToken cancellationToken = default)
+    {
+        var roles = await _roleManager.Roles.ToListAsync(cancellationToken: cancellationToken);
+        if (roles?.Count > 0)
+        {
+            return _mapper.Map<List<RoleDto>>(roles);
+        }
+        return [];
+    }
+
+    public async Task<ErrorResponseDto?> AddUserRoleAsync(UserRoleDto userRoleDto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByEmailAsync(userRoleDto.Email);
+        var role = await _roleManager.FindByNameAsync(userRoleDto.Role);
+
+        if (role == null || user == null)
+        {
+            return new ErrorResponseDto { Code = "E03", Description = "Invalid user or role" };
+        }
+
+        var result = await _userManager.AddToRoleAsync(user, userRoleDto.Role);
+        return null;
+    }
+
     private async Task<string> GenerateTokenAsync(MetaPersonaIdentityUser user)
-    { 
+    {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JKEY"]));
 
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
