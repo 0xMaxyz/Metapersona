@@ -2,9 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using MetaPersonaApi.Data.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Web3.Accounts;
-using MetaPersonaApi.Entities.Configuration;
 using MetaPersonaApi.Entities.Config;
-using Nethereum.Util;
 using MetaPersonaApi.Utils;
 
 namespace MetaPersonaApi.Endpoints.Administration;
@@ -12,7 +10,6 @@ namespace MetaPersonaApi.Endpoints.Administration;
 
 public static class AdministrationEndpoints
 {
-
     public static void MapAdministrationEndpoints(this IEndpointRouteBuilder routes)
     {
         routes.MapGet("/api/admin/wallet", [Authorize(Roles = "Administrator")] async (IConfigEntityRepository configRepository) =>

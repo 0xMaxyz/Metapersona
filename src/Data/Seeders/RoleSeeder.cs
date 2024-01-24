@@ -17,9 +17,9 @@ internal class RoleSeeder : IEntityTypeConfiguration<IdentityRole<Guid>>
             },
             new IdentityRole<Guid>
             {
-                Id = Guid.Parse(Constants.UserRoleId),
-                Name = "User",
-                NormalizedName = "User".UNormalize()
+                Id = Guid.Parse(Constants.SpawnerRoleId),
+                Name = "Spawner",
+                NormalizedName = "Spawner".UNormalize()
             }
             ) ;
     }

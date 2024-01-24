@@ -55,6 +55,8 @@ public class Program
 
         builder.Services.AddAuthorization(options =>
         {
+            options.AddPolicy("Admin", options => options.RequireAuthenticatedUser().RequireRole("Administrator").Build());
+
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
             .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
             .RequireAuthenticatedUser()

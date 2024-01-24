@@ -3,6 +3,7 @@ using System;
 using MetaPersonaApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MetaPersonaApi.Migrations
 {
     [DbContext(typeof(MetaPersonaDbContext))]
-    partial class MetaPersonaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240124080446_change_user_role_to_spawner")]
+    partial class change_user_role_to_spawner
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
