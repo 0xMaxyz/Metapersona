@@ -6,6 +6,7 @@ networks:
 
 services:
   webapi:
+    env_file: .env
     image: metapersona-api:latest
     depends_on:
       - app_db
@@ -30,6 +31,7 @@ services:
 
 
   app_db:  
+    env_file: .env
     container_name: app_db
     image: postgres:latest
     restart: always
