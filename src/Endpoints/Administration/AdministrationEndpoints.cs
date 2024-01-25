@@ -59,7 +59,7 @@ public static class AdministrationEndpoints
             return Results.BadRequest();
         })
             .WithTags("Administration")
-            .WithName("ContractAddress")
+            .WithName("Set Contract Address")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
@@ -70,7 +70,7 @@ public static class AdministrationEndpoints
             return contractConfig == null ? Results.NoContent() : Results.Ok(contractConfig);
         })
             .WithTags("Administration")
-            .WithName("ContractAddress")
+            .WithName("Get Contract Address")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized);
