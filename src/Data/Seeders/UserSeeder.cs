@@ -13,7 +13,7 @@ internal class UserSeeder : IEntityTypeConfiguration<MetaPersonaIdentityUser>
             builder.HasData(
             new MetaPersonaIdentityUser
             {
-                Id = Guid.Parse(Constants.AdminUserId),
+                Id = Constants.AdminUserId,
                 Email = "omni001@proton.me",
                 NormalizedEmail = "omni001@proton.me".UNormalize(),
                 UserName = "omni001@proton.me",

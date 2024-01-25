@@ -11,19 +11,19 @@ internal class ConfigSeeder : IEntityTypeConfiguration<ConfigEntity>
         builder.HasData(
             new ConfigEntity(Constants.ContractAddress, "0x")
             {
-                Id = Guid.Parse(Constants.ContractAddressId)
+                Id = Constants.ContractAddressId
             },
             new ConfigEntity(Constants.WalletAddress, "0x")
             {
-                Id = Guid.Parse(Constants.WalletAddressId)
+                Id = Constants.WalletAddressId
             },
             new ConfigEntity(Constants.WalletPublicKey, "0x")
             {
-                Id = Guid.Parse(Constants.WalletPublicKeyId)
+                Id = Constants.WalletPublicKeyId
             },
             new ConfigEntity(Constants.WalletPrivateKey, "0x")
             {
-                Id = Guid.Parse(Constants.WalletPrivateKeyId)
+                Id = Constants.WalletPrivateKeyId
             });
     }
 }

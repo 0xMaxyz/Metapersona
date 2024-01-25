@@ -28,13 +28,13 @@ public static class AdministrationEndpoints
                 // create a wallet and save it in db and then return the wallet address
                 var wallet = GenerateAccount();
 
-                var WalletAdd = await configRepository.GetAsync(Guid.Parse(Constants.WalletAddressId));
+                var WalletAdd = await configRepository.GetAsync(Constants.WalletAddressId);
                 WalletAdd?.SetValue(wallet.address);
 
-                var walletPrvKey = await configRepository.GetAsync(Guid.Parse(Constants.WalletPrivateKeyId));
+                var walletPrvKey = await configRepository.GetAsync(Constants.WalletPrivateKeyId);
                 walletPrvKey?.SetValue(wallet.privateKey);
 
-                var walletPubKey = await configRepository.GetAsync(Guid.Parse(Constants.WalletPublicKeyId));
+                var walletPubKey = await configRepository.GetAsync(Constants.WalletPublicKeyId);
                 walletPubKey?.SetValue(wallet.publicKey);
 
                 await configRepository.UpdateRangeAsync(WalletAdd, walletPrvKey, walletPubKey);
@@ -50,7 +50,7 @@ public static class AdministrationEndpoints
         {
             if (!string.IsNullOrWhiteSpace(contractAddress) && (contractAddress.Length == 40 || contractAddress.Length == 42) && contractAddress.IsValidAddress())
             {
-                var contractConfig = await configRepository.GetAsync(Guid.Parse(Constants.ContractAddressId));
+                var contractConfig = await configRepository.GetAsync(Constants.ContractAddressId);
                 contractConfig?.SetValue(contractAddress);
                 await configRepository.UpdateAsync(contractConfig);
                 return Results.Ok();
@@ -62,6 +62,17 @@ public static class AdministrationEndpoints
             .WithName("ContractAddress")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        routes.MapGet("/api/admin/contract", [Authorize(Roles = "Administrator")] async (IConfigEntityRepository configRepository) =>
+        {
+            var contractConfig = await configRepository.GetConfigAsync(Constants.ContractAddress);
+            return contractConfig == null ? Results.NoContent() : Results.Ok(contractConfig);
+        })
+            .WithTags("Administration")
+            .WithName("ContractAddress")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized);
 
         routes.MapGet("/api/admin/roles", [Authorize(Roles = "Administrator")] async (IAuthManager authManager) =>

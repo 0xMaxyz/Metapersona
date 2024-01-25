@@ -11,8 +11,8 @@ public class UserRoleSeeder : IEntityTypeConfiguration<IdentityUserRole<Guid>>
         builder.HasData(
             new IdentityUserRole<Guid>
             {
-                RoleId = Guid.Parse(Constants.AdminRoleId),
-                UserId = Guid.Parse(Constants.AdminUserId)
+                RoleId = Constants.AdminRoleId,
+                UserId = Constants.AdminUserId
             }
             );
     }

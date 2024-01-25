@@ -11,13 +11,13 @@ internal class RoleSeeder : IEntityTypeConfiguration<IdentityRole<Guid>>
         builder.HasData(
             new IdentityRole<Guid>
             {
-                Id = Guid.Parse(Constants.AdminRoleId),
+                Id = Constants.AdminRoleId,
                 Name = "Administrator",
                 NormalizedName = "Administrator".UNormalize()
             },
             new IdentityRole<Guid>
             {
-                Id = Guid.Parse(Constants.SpawnerRoleId),
+                Id = Constants.SpawnerRoleId,
                 Name = "Spawner",
                 NormalizedName = "Spawner".UNormalize()
             }
