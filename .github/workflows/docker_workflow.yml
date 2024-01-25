@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Source .env
       run: source ~/actions-runner/Env/.env
@@ -19,7 +19,7 @@ jobs:
     - name: Build and run Docker Compose
       run: |
         # Set up Docker on the self-hosted runner
-        sudo service docker start
+        # sudo service docker start
 
         # Build Docker image
         docker build -t metapersona-api:latest .
