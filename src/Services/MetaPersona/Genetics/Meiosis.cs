@@ -1,4 +1,6 @@
-﻿using MetaPersonaApi.Services.MetaPersona.Genetics.Enums;
+﻿using AutoMapper;
+using MetaPersonaApi.Services.MetaPersona.DTOs;
+using MetaPersonaApi.Services.MetaPersona.Genetics.Enums;
 using MetaPersonaApi.Services.MetaPersona.SolidityStructs;
 using System.Numerics;
 
@@ -8,7 +10,7 @@ public class Meiosis
 {
     public const int AUTOSOMECOUNT = 37;
 
-    public static XorY IsXorY(Chromosome chromosome)
+    public static XorY IsXorY(ChromosomeDto chromosome)
     {
         if (chromosome == null)
         {
@@ -29,7 +31,7 @@ public class Meiosis
         }
     }
 
-    public static Gender GetGender(Chromosome[] chromosomes)
+    public static Gender GetGender(ChromosomeDto[] chromosomes)
     {
         XorY c1_XorY = IsXorY(chromosomes[0]);
         XorY c2_XorY = IsXorY(chromosomes[1]);
@@ -51,13 +53,10 @@ public class Meiosis
         }
     }
 
-    public static Chromosome[] DoMeiosis(Chromosome[] chromosomes)
+    public static ChromosomeDto[] DoMeiosis(ChromosomeDto[] chromosomes, IMapper mapper)
     {
-        var input1 = new Chromosome[2];
-        var input2 = new Chromosome[2];
-
-        Array.Copy(chromosomes, input1, 2);
-        Array.Copy(chromosomes, input2, 2);
+        var input1 = mapper.Map<ChromosomeDto[]>(chromosomes);
+        var input2 = mapper.Map<ChromosomeDto[]>(chromosomes);
 
         Crossover(input1);
         Crossover(input2);
@@ -65,7 +64,7 @@ public class Meiosis
         return [.. input1, .. input2];
     }
 
-    public static void Crossover(Chromosome[] chromosomes)
+    public static void Crossover(ChromosomeDto[] chromosomes)
     {
         Gender gender = GetGender(chromosomes);
         BigInteger y1 = chromosomes[0].Y;

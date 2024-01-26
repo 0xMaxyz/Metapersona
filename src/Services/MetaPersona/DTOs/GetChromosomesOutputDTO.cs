@@ -9,5 +9,5 @@ public partial class GetChromosomesOutputDTO : GetChromosomesOutputDTOBase { }
 public class GetChromosomesOutputDTOBase : IFunctionOutputDTO
 {
     [Parameter("tuple[2]", "", 1)]
-    public virtual Chromosome[] Chromosomes { get; set; }
+    public virtual List<Chromosome> Chromosomes { get; set; }
 }

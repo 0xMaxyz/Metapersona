@@ -14,6 +14,7 @@ using MetaPersonaApi.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using MetaPersonaApi.Services.Authentication;
 using MetaPersonaApi.Services.MetaPersona;
+using MetaPersonaApi.Endpoints.MetaPersona;
 
 namespace MetaPersonaApi;
 
@@ -67,6 +68,7 @@ public class Program
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         builder.Services.AddScoped<IAuthManager, AuthManager>();
         builder.Services.AddScoped<IMetaPersonaManager, MetaPersonaManager>();
+
         // Repositories
         builder.Services.AddScoped<IConfigEntityRepository, ConfigEntityRepository>();
 
@@ -97,8 +99,8 @@ public class Program
         // Map API Endpoints
         app.MapAuthenticationEndpoints();
         app.MapAdministrationEndpoints();
+        app.MapMetaPersonaEndpoints();
 
         app.Run();
     }
 }
-

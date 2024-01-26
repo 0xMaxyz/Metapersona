@@ -1,37 +1,55 @@
-﻿using MetaPersonaApi.Data.Contracts;
+﻿using AutoMapper;
+using MetaPersonaApi.Data.Contracts;
 using MetaPersonaApi.Data.DTOs;
+using MetaPersonaApi.Data.Repositories;
 using MetaPersonaApi.Services.MetaPersona.DTOs;
 using MetaPersonaApi.Services.MetaPersona.Functions;
 using MetaPersonaApi.Services.MetaPersona.Genetics;
 using MetaPersonaApi.Services.MetaPersona.Genetics.Enums;
 using MetaPersonaApi.Services.MetaPersona.SolidityStructs;
 using Nethereum.Contracts.Standards.ERC1155.ContractDefinition;
+using Nethereum.Web3;
+using Nethereum.Web3.Accounts;
 using System.Numerics;
 
 namespace MetaPersonaApi.Services.MetaPersona;
 
 public class MetaPersonaManager : IMetaPersonaManager
 {
-    public MetaPersonaManager(IConfigEntityRepository configEntityRepository, IConfiguration configuration, ILoggerFactory loggerFactory)
+    public MetaPersonaManager(IConfigEntityRepository configEntityRepository, IConfiguration configuration, ILoggerFactory loggerFactory, IMapper mapper)
     {
         _configEntityRepository = configEntityRepository;
         _configuration = configuration;
+        _mapper = mapper;
         _logger = loggerFactory.CreateLogger<MetaPersonaManager>();
-
-        // get RPC_URL
-        var rpcUrl = _configuration["RPC_URL"];
-
-        _web3 = new Nethereum.Web3.Web3(rpcUrl, _logger);
     }
     private readonly ILogger<MetaPersonaManager> _logger;
     private readonly IConfigEntityRepository _configEntityRepository;
     private readonly IConfiguration _configuration;
+    private readonly IMapper _mapper;
     private static string? contractAddress;
-    private readonly Nethereum.Web3.Web3? _web3;
+    private Nethereum.Web3.Web3? _web3;
 
+    private async Task<Web3> InitializeWeb3()
+    {
+        if (_web3 == null)
+        {
+            // get prvKey
+            var prvKey = await _configEntityRepository.GetConfigAsync(Constants.WalletPrivateKey);
+            // get RPC_URL
+            var rpcUrl = _configuration["RPC_URL"];
+
+            Account sender = new(prvKey);
+
+            _web3 = new Nethereum.Web3.Web3(sender, rpcUrl, _logger);
+        }
+        return _web3;
+    }
 
     public async Task<BigInteger> SpawnAsync(SpawnDto spawnDto)
     {
+        _ = await InitializeWeb3();
+
         var fertilizeResult = await Fertilize(spawnDto);
         if (fertilizeResult.Length == 0)
         {
@@ -45,14 +63,16 @@ public class MetaPersonaManager : IMetaPersonaManager
             PersonaOwner1 = spawnDto.Persona1OwnerAddress,
             PersonaOwner2 = spawnDto.Persona2OwnerAddress,
             Receiver = spawnDto.ReceiverAddress,
-            Chromosomes = fertilizeResult
+            Chromosomes = [.. fertilizeResult],
         };
         var contractAddress = await GetContractAddress();
 
-        var spawnHandler = _web3.Eth.GetContractQueryHandler<SpawnFunction>();
-        var newId = await spawnHandler.QueryAsync<BigInteger>(contractAddress, spawnFunction);
+        var spawnHandler = _web3.Eth.GetContractTransactionHandler<SpawnFunction>();
+        var transactionReceipt = await spawnHandler.SendRequestAndWaitForReceiptAsync(contractAddress, spawnFunction);
 
-        return newId;
+        var id = transactionReceipt.Logs[1]["topics"][1];
+
+        return BigInteger.Parse(id.ToString()[2..], System.Globalization.NumberStyles.HexNumber);
     }
 
     private async Task<Chromosome[]> Fertilize(SpawnDto spawnDto)
@@ -67,16 +87,22 @@ public class MetaPersonaManager : IMetaPersonaManager
             var persona1Chromosomes = await GetChromosomes(spawnDto.Persona1OwnerAddress, spawnDto.Persona1Id);
             var persona2Chromosomes = await GetChromosomes(spawnDto.Persona2OwnerAddress, spawnDto.Persona2Id);
 
+            //ChromosomeDto[] persona1ChromosomeDtp = new ChromosomeDto[persona1Chromosomes.Length];
+            //ChromosomeDto[] persona2ChromosomeDtp = new ChromosomeDto[persona2Chromosomes.Length];
+
+            ChromosomeDto[] persona1ChromosomeDto = _mapper.Map<Chromosome[], ChromosomeDto[]>(persona1Chromosomes);
+            ChromosomeDto[] persona2ChromosomeDto = _mapper.Map<Chromosome[], ChromosomeDto[]>(persona2Chromosomes);
+
             // check gender
-            var persona1Gender = Meiosis.GetGender(persona1Chromosomes);
-            var persona2Gender = Meiosis.GetGender(persona2Chromosomes);
+            var persona1Gender = Meiosis.GetGender(persona1ChromosomeDto);
+            var persona2Gender = Meiosis.GetGender(persona2ChromosomeDto);
 
             if (IsGendersValid(persona1Gender, persona2Gender))
             {
-                var gametes1 = Meiosis.DoMeiosis(persona1Chromosomes);
-                var gametes2 = Meiosis.DoMeiosis(persona2Chromosomes);
+                var gametes1 = Meiosis.DoMeiosis(persona1ChromosomeDto, _mapper);
+                var gametes2 = Meiosis.DoMeiosis(persona2ChromosomeDto, _mapper);
 
-                return [gametes1[Random.Shared.Next(0, 3)], gametes2[Random.Shared.Next(0, 3)]];
+                return [_mapper.Map<ChromosomeDto, Chromosome>(gametes1[Random.Shared.Next(0, 3)]), _mapper.Map<ChromosomeDto, Chromosome>(gametes2[Random.Shared.Next(0, 3)])];
             }
         }
         return [];
@@ -136,6 +162,6 @@ public class MetaPersonaManager : IMetaPersonaManager
 
         var getChromosomeHandler = _web3.Eth.GetContractQueryHandler<GetChromosomesFunction>();
         var chromosomes = await getChromosomeHandler.QueryAsync<GetChromosomesOutputDTO>(contractAddress, getChromosomesFunction);
-        return chromosomes.Chromosomes;
+        return [.. chromosomes.Chromosomes];
     }
 }
