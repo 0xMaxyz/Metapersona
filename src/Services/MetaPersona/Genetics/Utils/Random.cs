@@ -4,12 +4,13 @@ namespace MetaPersonaApi.Services.MetaPersona.Genetics.Utils;
 
 public class Random
 {
-    public static ulong Rand()
+
+    public static int Rand()
     {
-        return BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8), 0);
+        return Math.Abs(BitConverter.ToInt32(RandomNumberGenerator.GetBytes(4), 0));
     }
 
-    public static ulong RandBetween(uint min, uint max)
+    public static int RandBetween(int min, int max)
     {
         if (min > max)
         {

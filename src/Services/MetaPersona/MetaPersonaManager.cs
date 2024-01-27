@@ -102,7 +102,7 @@ public class MetaPersonaManager : IMetaPersonaManager
                 var gametes1 = Meiosis.DoMeiosis(persona1ChromosomeDto, _mapper);
                 var gametes2 = Meiosis.DoMeiosis(persona2ChromosomeDto, _mapper);
 
-                return [_mapper.Map<ChromosomeDto, Chromosome>(gametes1[Random.Shared.Next(0, 3)]), _mapper.Map<ChromosomeDto, Chromosome>(gametes2[Random.Shared.Next(0, 3)])];
+                return [_mapper.Map<ChromosomeDto, Chromosome>(gametes1[Genetics.Utils.Random.RandBetween(0, 3)]), _mapper.Map<ChromosomeDto, Chromosome>(gametes2[Genetics.Utils.Random.RandBetween(0, 3)])];
             }
         }
         return [];

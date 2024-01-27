@@ -9,6 +9,8 @@ namespace MetaPersonaApi.Services.MetaPersona.Genetics;
 public class Meiosis
 {
     public const int AUTOSOMECOUNT = 37;
+    public const int XCOUNT = 2;
+    public const int YCOUNT = 1;
 
     public static XorY IsXorY(ChromosomeDto chromosome)
     {
@@ -104,15 +106,15 @@ public class Meiosis
         if (y1 > 0)
         {
             // Swap bytes for y1 and x2
-            SwapXY(ref y1, ref x2[0], Random.Shared.Next(3, 9), true);
-            SwapXY(ref y1, ref x2[1], Random.Shared.Next(3, 9), false);
+            SwapXY(ref y1, ref x2[0], Utils.Random.RandBetween(3, 9), true);
+            SwapXY(ref y1, ref x2[1], Utils.Random.RandBetween(3, 9), false);
         }
 
         if (y2 > 0)
         {
             // Swap bytes for y2 and x1
-            SwapXY(ref y2, ref x1[0], Random.Shared.Next(3, 9), true);
-            SwapXY(ref y2, ref x1[1], Random.Shared.Next(3, 9), false);
+            SwapXY(ref y2, ref x1[0], Utils.Random.RandBetween(3, 9), true);
+            SwapXY(ref y2, ref x1[1], Utils.Random.RandBetween(3, 9), false);
         }
     }
 
@@ -142,8 +144,8 @@ public class Meiosis
         }
 
         // Update the values
-        y = new BigInteger(yBytes);
-        x = new BigInteger(xBytes);
+        y = new BigInteger(yBytes, true);
+        x = new BigInteger(xBytes, true);
     }
 
     public static void DoAutosomalCrossover(BigInteger[] _auto1, BigInteger[] _auto2)
@@ -172,7 +174,7 @@ public class Meiosis
 
         for (int i = 0; i < _chr1.Length; i++)
         {
-            int numSwaps = Random.Shared.Next(minSwaps, maxSwaps);
+            int numSwaps = Utils.Random.RandBetween(minSwaps, maxSwaps);
 
             for (int j = 0; j < numSwaps; j++)
             {
@@ -180,7 +182,7 @@ public class Meiosis
                 int byteIndex;
                 do
                 {
-                    byteIndex = Random.Shared.Next(0, _chr1[i].ToByteArray().Length - 1);
+                    byteIndex = Utils.Random.RandBetween(0, _chr1[i].ToByteArray().Length - 1);
                 } while (!swappedIndices.Add(byteIndex));
 
                 ByteSwap(ref _chr1[i], ref _chr2[i], byteIndex);
@@ -200,8 +202,8 @@ public class Meiosis
         {
             (bytes2[index], bytes1[index]) = (bytes1[index], bytes2[index]);
 
-            num1 = new BigInteger(bytes1);
-            num2 = new BigInteger(bytes2);
+            num1 = new BigInteger(bytes1, true);
+            num2 = new BigInteger(bytes2, true);
         }
     }
 }
