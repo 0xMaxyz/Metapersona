@@ -34,6 +34,9 @@ contract MetaPersona is ERC1155, AccessControl {
 
     // Persona
 
+    mapping(address => uint256[]) private _personas;
+    //mapping(address => uint256) private _lastPersonaIndex;
+
     event Genesis(uint256 indexed timestamp);
 
     mapping(uint256 => Genetics.Chromosome[2]) chromosomesN;
@@ -118,6 +121,8 @@ contract MetaPersona is ERC1155, AccessControl {
 
             emit NewPersonaBorn(newPersonaId, _receiver);
 
+            _personas[_receiver].push(newPersonaId);
+
             return newPersonaId;
         } else {
             revert MetaPersona_IncompatiblePersonas();
@@ -163,6 +168,10 @@ contract MetaPersona is ERC1155, AccessControl {
 
         emit Genesis(block.timestamp);
         personaId += 2;
+        // Add to personas
+        _personas[msg.sender].push(ADAM);
+        _personas[msg.sender].push(EVE);
+        //_lastPersonaIndex[msg.sender] = 3;
     }
 
     function spawn(uint256 _personaId1, uint256 _personaId2, address _personaOwner, address _receiver)
@@ -211,6 +220,8 @@ contract MetaPersona is ERC1155, AccessControl {
 
         emit NewPersonaBorn(newPersonaId, _receiver);
 
+        _personas[_receiver].push(newPersonaId);
+
         return newPersonaId;
     }
 
@@ -224,5 +235,13 @@ contract MetaPersona is ERC1155, AccessControl {
         if (hasRole(SPAWN_ROLE, _spawner)) {
             revokeRole(SPAWN_ROLE, _spawner);
         }
+    }
+
+    function _getPersonas(address _addr) private view returns (uint256[] memory) {
+        return _personas[_addr];
+    }
+
+    function getPersonas() external view returns (uint256[] memory) {
+        return _getPersonas(msg.sender);
     }
 }

@@ -68,6 +68,15 @@ contract MetaPersonaTest is Test {
 
         assertEq(adB, 1);
         assertEq(evB, 1);
+
+        // check Personas mapping
+        vm.startPrank(deployerAddress);
+        uint256[] memory personas = metaPersona.getPersonas();
+
+        console.logUint(personas.length);
+        assertEq(personas[0], 1);
+        assertEq(personas[1], 2);
+        vm.stopPrank();
     }
 
     function test_spawning() public {
@@ -75,15 +84,19 @@ contract MetaPersonaTest is Test {
 
         vm.startPrank(deployerAddress);
         uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress);
+        uint256[] memory ids = metaPersona.getPersonas();
         vm.stopPrank();
 
         assertEq(newPersonaId, 3);
+        assertEq(ids[ids.length - 1], 3);
 
         vm.startPrank(deployerAddress);
         newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress);
+        uint256[] memory ids2 = metaPersona.getPersonas();
         vm.stopPrank();
 
         assertEq(newPersonaId, 4);
+        assertEq(ids2[ids2.length - 1], 4);
     }
 
     function test_OffchainSpawning() public {
@@ -107,7 +120,11 @@ contract MetaPersonaTest is Test {
         newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress, _chr);
         vm.stopPrank();
 
+        vm.prank(deployerAddress);
+        uint256[] memory ids2 = metaPersona.getPersonas();
+
         assertEq(newPersonaId, 4);
+        assertEq(ids2[ids2.length - 1], 4);
     }
 
     function rand() public returns (uint256) {
