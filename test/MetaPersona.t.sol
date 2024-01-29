@@ -74,13 +74,13 @@ contract MetaPersonaTest is Test {
         genesis();
 
         vm.startPrank(deployerAddress);
-        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress);
+        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress);
         vm.stopPrank();
 
         assertEq(newPersonaId, 3);
 
         vm.startPrank(deployerAddress);
-        newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress);
+        newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress);
         vm.stopPrank();
 
         assertEq(newPersonaId, 4);
@@ -98,7 +98,7 @@ contract MetaPersonaTest is Test {
         assertEq(isspwn, true);
 
         // create new persona using onchain calculation
-        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress, deployerAddress);
+        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress, deployerAddress);
         // get the chromosomes of this new persona
         Genetics.Chromosome[2] memory _chr = metaPersona.getChromosomesN(deployerAddress, newPersonaId);
         vm.stopPrank();

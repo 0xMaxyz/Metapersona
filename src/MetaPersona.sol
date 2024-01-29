@@ -28,13 +28,9 @@ contract MetaPersona is ERC1155, AccessControl {
         _setURI(newuri);
     }
 
-    // The following functions are overrides required by Solidity.
-
     function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
-
-    ///////////////////////////////////////////
 
     // Persona
 
@@ -169,14 +165,11 @@ contract MetaPersona is ERC1155, AccessControl {
         personaId += 2;
     }
 
-    function spawn(
-        uint256 _personaId1,
-        uint256 _personaId2,
-        address _personaOwner1,
-        address _personaOwner2,
-        address _receiver
-    ) external returns (uint256) {
-        return _spawn(_personaId1, _personaId2, _personaOwner1, _personaOwner2, _receiver);
+    function spawn(uint256 _personaId1, uint256 _personaId2, address _personaOwner, address _receiver)
+        external
+        returns (uint256)
+    {
+        return _spawn(_personaId1, _personaId2, _personaOwner, _personaOwner, _receiver);
     }
 
     function _copyChromosomeToStorage(uint256 _personaId, Genetics.Chromosome[2] memory _chr) private {
