@@ -1,0 +1,77 @@
+﻿<CascadingValue Value="this">
+    <CascadingAuthenticationState>
+        @ChildContent
+    </CascadingAuthenticationState>
+</CascadingValue>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /////////////////////////////////////
+    ///            States             ///
+    /////////////////////////////////////
+    private bool _isLoggedIn = false;
+    public bool IsLoggedIn
+    {
+        get => _isLoggedIn;
+        set
+        {
+            _isLoggedIn = value;
+            StateHasChanged();
+
+            NotifyStateChange(new(nameof(this.IsLoggedIn), value));
+        }
+    }
+
+    private string _accountAddress = string.Empty;
+    public string AccountAddress
+    {
+        get => _accountAddress;
+        set
+        {
+            _accountAddress = value;
+            StateHasChanged();
+
+            NotifyStateChange(new(nameof(this.AccountAddress), value));
+        }
+    }
+
+    private long _chainId = 0;
+    public long ChainId
+    {
+        get => _chainId;
+        set
+        {
+            _chainId = value;
+            StateHasChanged();
+
+            NotifyStateChange(new(nameof(this.ChainId), value));
+        }
+    }
+
+    /////////////////////////////////////
+    ///           Callbacks           ///
+    /////////////////////////////////////
+
+    private List<EventCallback<StateChangesArgs>> Callbacks = [];
+
+    public void RegisterCallback(EventCallback<StateChangesArgs> callback)
+    {
+        if (!Callbacks.Contains(callback))
+        {
+            Callbacks.Add(callback);
+        }
+    }
+
+    private void NotifyStateChange(StateChangesArgs args)
+    {
+        foreach (var callback in Callbacks)
+        {
+            try
+            {
+                callback.InvokeAsync(args);
+            }
+            catch { }
+        }
+    }
+}

@@ -1,0 +1,21 @@
+﻿@using Nethereum.Metamask
+<MudDialog>
+    <DialogContent>
+        MetaPersona is deployed on Areon Network Testnet, please switch to Areon Network Testnet or disconnect to continue.
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Error"
+                   Variant="Variant.Filled"
+                   OnClick="Disconnect"
+        StartIcon="@Icons.Material.Filled.Close">
+            Disconnect
+        </MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Switch">
+                   Areon
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+

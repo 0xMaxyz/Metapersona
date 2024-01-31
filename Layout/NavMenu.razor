@@ -1,0 +1,41 @@
+﻿<AuthorizeView Roles="EthereumConnected">
+    @if (Vertical)
+    {
+        <MudNavMenu>
+            @foreach (var item in NavItems)
+            {
+                <MudNavLink Href="@item.Value">
+                    @item.Key
+                </MudNavLink>
+            }
+        </MudNavMenu>
+    }
+    else
+    {
+        <div class="d-flex flex-row ms-10">
+            @foreach (var item in NavItems)
+            {
+                <MudButton Href="@item.Value"
+                           Variant="Variant.Text"
+                           Style="color:white!important"
+                           Size="Size.Small">
+                    @item.Key
+                </MudButton>
+            }
+        </div>
+    }
+</AuthorizeView>
+
+@code {
+
+    [Parameter]
+    public bool Vertical { get; set; } = false;
+    private Dictionary<string, string> NavItems => new Dictionary<string, string>
+    {
+        {"Home",  "/" },
+        {"Market",  "/Market" },
+        {"Spawn",  "/Spawn" },
+        {"My Personas",  "/MyPersonas" },
+        {"Staking",  "/Staking" },
+    };
+}

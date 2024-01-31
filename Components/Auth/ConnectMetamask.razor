@@ -1,0 +1,97 @@
+﻿@namespace MetaPersona.Components.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@using Nethereum.Blazor
+@using Nethereum.Metamask
+@using Nethereum.UI
+@implements IDisposable;
+@inject MetamaskHostProvider _metamaskHostProvider;
+@inject SelectedEthereumHostProviderService _selectedHostProvider;
+@inject AuthenticationStateProvider _authenticationStateProvider;
+@inject NavigationManager NavManager
+
+<div>
+    @if (MetamaskAvailable)
+    {
+        <AuthorizeView Roles="EthereumConnected">
+            <Authorized>
+                <MudMenu Label="@Truncate(SelectedAccount, SelectedAccountTruncateLength)"
+                         AnchorOrigin="Origin.BottomRight"
+                         TransformOrigin="Origin.TopRight"
+                         Color="Color.Warning"
+                         Variant="Variant.Outlined">
+                    <MudCard Style="width:30vw;min-width:300px;max-width:500px;" Elevation="0">
+                        <MudCardHeader Class="pa-0 ma-1 max-width">
+                            <div class="d-flex flex-column" style="width:100%">
+                                <div class="d-flex flex-row my-auto">
+                                    <MudAvatar Color="Color.Secondary" Elevation="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.Abc" />
+                                    </MudAvatar>
+                                    <MudText Class="my-auto ms-2">
+                                        @Truncate(SelectedAccount, SelectedAccountTruncateLength)
+                                    </MudText>
+                                </div>
+                                <div class="d-flex flex-row mt-2 my-auto">
+                                    @if (NetworkSettings.Networks?.Any(x => x.Key == AppState.ChainId.ToString()) ?? false)
+                                    {
+                                        <div class="d-flex flex-column my-auto">
+                                            <div class="d-flex flex-row my-auto">
+                                                <div class="small-circle me-2 my-auto" />
+                                                <MudText Class="my-auto">
+                                                    @($"Network: {NetworkSettings.Networks[AppState.ChainId.ToString()].Name}")
+                                                </MudText>
+                                            </div>
+                                        </div>
+
+                                    }
+                                    else
+                                    {
+                                        <div class="small-circle my-auto" />
+                                        <MudText Class="my-auto">
+                                            @($"Network chain id: {AppState.ChainId}")
+                                        </MudText>
+                                    }
+                                    <MudSpacer />
+                                    <MudButton Style="scale:0.7"
+                                               Class="my-auto"
+                                               Variant="Variant.Outlined"
+                                               Size="Size.Small"
+                                               OnClick="DisconnectAsync">
+                                        Disconnect
+                                    </MudButton>
+                                </div>
+                                @if (NetworkSettings.Networks?.Any(x => x.Key == AppState.ChainId.ToString()) ?? false)
+                                {
+                                    <MudButton Href="@($"{NetworkSettings.Networks[AppState.ChainId.ToString()].Explorer}{SelectedAccount}")"
+                                               Target="_blank"
+                                               Variant="Variant.Text"
+                                               Size="Size.Small"
+                                               StartIcon="@Icons.Material.Filled.OpenInNew">
+                                        View on Explorer
+                                    </MudButton>
+                                }
+                            </div>
+                        </MudCardHeader>
+                    </MudCard>
+                </MudMenu>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           OnClick="EnableEthereumAsync"
+                           StartIcon="@Constants.MetamaskIconAsImgTag" IconSize="Size.Large">
+                    @ConnectText
+                </MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Href="https://metamask.io/download/"
+                   Target="_blank"
+                   StartIcon="@Constants.MetamaskIconAsImgTag" IconSize="Size.Large">
+            @InstallMetamaskText
+        </MudButton>
+    }
+</div>

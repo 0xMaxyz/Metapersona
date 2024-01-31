@@ -1,0 +1,49 @@
+﻿@using Nethereum.Metamask
+@inherits LayoutComponentBase
+
+<style>
+    glass {
+        backdrop-filter: blur(30px);
+    }
+</style>
+
+<MudThemeProvider @ref="_mudThemeProvider" @bind-IsDarkMode=_isDarkMode />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar>
+        <MudText>MetaPersona</MudText>
+        <MudBreakpointProvider>
+            <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                <NavMenu />
+                <MudSpacer />
+                <MudToggleIconButton @bind-Toggled=_isDarkMode
+                                     Icon="@Icons.Material.Filled.DarkMode" Color="@MudBlazor.Color.Inherit" Title="Dark Mode"
+                                     ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@MudBlazor.Color.Inherit" ToggledTitle="Light Mode" />
+                <ConnectMetamask />
+            </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert>
+                <MudSpacer />
+                <MudToggleIconButton @bind-Toggled=_isDarkMode
+                                     Icon="@Icons.Material.Filled.DarkMode" Color="@MudBlazor.Color.Inherit" Title="Dark Mode"
+                                     ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@MudBlazor.Color.Inherit" ToggledTitle="Light Mode" />
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" ListClass="pa-2">
+                    <ConnectMetamask />
+                    <MudDivider Class="my-2" />
+                    <NavMenu Vertical />
+                </MudMenu>
+            </MudHidden>
+        </MudBreakpointProvider>
+    </MudAppBar>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="mt-1 ps-2 pe-2">
+            <ErrorBoundary>
+                @Body
+            </ErrorBoundary>
+            <MudScrollToTop>
+                <MudFab Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.KeyboardArrowUp" />
+            </MudScrollToTop>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
