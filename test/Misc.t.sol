@@ -20,8 +20,4 @@ contract MiscTests is Test {
 
         assertEq(result, lsh);
     }
-
-    function test_EncodeChromosomes() public {
-        Genetics.Chromosome[2] memory _chr;
-    }
 }

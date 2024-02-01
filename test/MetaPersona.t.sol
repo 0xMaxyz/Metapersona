@@ -15,6 +15,7 @@ contract MetaPersonaTest is Test {
     string uri;
     MetaPersona metaPersona;
     uint256 randomSeed;
+    uint256 spawnFee;
 
     event PersonaStaked(uint256 indexed _personaId);
     event NewPersonaBorn(uint256 indexed _personaId, address indexed receiver);
@@ -24,8 +25,10 @@ contract MetaPersonaTest is Test {
         deployerAddress = vm.envAddress("DEPLOYER");
         uri = vm.envString("URI");
 
+        vm.deal(deployerAddress, 100 ether);
         vm.startPrank(deployerAddress);
         metaPersona = new MetaPersona(deployerAddress, uri, 1);
+        spawnFee = metaPersona.SpawnFee();
         vm.stopPrank();
     }
 
@@ -90,7 +93,7 @@ contract MetaPersonaTest is Test {
         genesis();
 
         vm.startPrank(deployerAddress);
-        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress);
+        uint256 newPersonaId = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         uint256[] memory ids = metaPersona.getPersonas();
         vm.stopPrank();
 
@@ -98,7 +101,7 @@ contract MetaPersonaTest is Test {
         assertEq(ids[ids.length - 1], 3);
 
         vm.startPrank(deployerAddress);
-        newPersonaId = metaPersona.spawn(1, 2, deployerAddress);
+        newPersonaId = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         uint256[] memory ids2 = metaPersona.getPersonas();
         vm.stopPrank();
 
@@ -118,7 +121,7 @@ contract MetaPersonaTest is Test {
         assertEq(isspwn, true);
 
         // create new persona using onchain calculation
-        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress);
+        uint256 newPersonaId = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         // get the chromosomes of this new persona
         Genetics.Chromosome[2] memory _chr = metaPersona.getChromosomes(deployerAddress, newPersonaId);
         vm.stopPrank();
@@ -140,29 +143,29 @@ contract MetaPersonaTest is Test {
     function test_femaleCooldownError() public {
         genesis();
         vm.startPrank(deployerAddress);
-        uint256 newPid = metaPersona.spawn(1, 2, deployerAddress);
+        uint256 newPid = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         while (metaPersona.getGender(newPid) != Genetics.Gender.Female) {
-            newPid = metaPersona.spawn(1, 2, deployerAddress);
+            newPid = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         }
         // then the newPid is female and in cooldown
 
         vm.expectRevert();
-        newPid = metaPersona.spawn(1, newPid, deployerAddress);
+        newPid = metaPersona.spawn{value: spawnFee}(1, newPid, deployerAddress);
         vm.stopPrank();
     }
 
     function test_femaleCooldownPassed() public {
         genesis();
         vm.startPrank(deployerAddress);
-        uint256 newPid = metaPersona.spawn(1, 2, deployerAddress);
+        uint256 newPid = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         while (metaPersona.getGender(newPid) != Genetics.Gender.Female) {
-            newPid = metaPersona.spawn(1, 2, deployerAddress);
+            newPid = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         }
 
         skip(2 days + 1);
         // then the newPid is female and ain+t in cooldown
         // next call does not revert
-        newPid = metaPersona.spawn(1, newPid, deployerAddress);
+        newPid = metaPersona.spawn{value: spawnFee}(1, newPid, deployerAddress);
         vm.stopPrank();
     }
 
@@ -170,7 +173,7 @@ contract MetaPersonaTest is Test {
         genesis();
         vm.startPrank(deployerAddress);
 
-        uint256 newPid = metaPersona.spawn(1, 2, deployerAddress);
+        uint256 newPid = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         uint256[] memory children = metaPersona.getChildren(1, 2);
 
         assertEq(children[0], newPid);
@@ -182,26 +185,12 @@ contract MetaPersonaTest is Test {
         genesis();
         vm.startPrank(deployerAddress);
 
-        uint256 newPid = metaPersona.spawn(1, 2, deployerAddress);
+        uint256 newPid = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         (uint256 parent1, uint256 parent2) = metaPersona.getParents(newPid);
 
         assert((parent1 == 1 && parent2 == 2) || (parent1 == 2 && parent2 == 1));
 
         vm.stopPrank();
-    }
-
-    function test_gasCostForHashingReference() public {
-        uint256 a = 10;
-        uint256 b = 20;
-
-        uint256 c = 20;
-    }
-
-    function test_gasCostForHashing(uint256 a, uint256 b) public {
-        // uint256 a = 10;
-        // uint256 b = 20;
-
-        uint256 c = uint256(keccak256(abi.encodePacked(a, b)));
     }
 
     function test_getUri() public {
@@ -220,7 +209,7 @@ contract MetaPersonaTest is Test {
 
     function test_getUri0Reverts() public {
         vm.expectRevert();
-        string memory _0Uri = metaPersona.uri(0);
+        string memory _u = metaPersona.uri(0);
     }
 
     function test_transferSinglePersona() public {
@@ -229,7 +218,7 @@ contract MetaPersonaTest is Test {
 
         vm.startPrank(deployerAddress);
         // make new Persona and give it to deployer
-        uint256 newPersonaId = metaPersona.spawn(1, 2, deployerAddress);
+        uint256 newPersonaId = metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         // transfer this new persona to another account
         metaPersona.safeTransferFrom(deployerAddress, receiver, newPersonaId, 1, "");
 
@@ -239,7 +228,7 @@ contract MetaPersonaTest is Test {
         uint256[] memory deployerPersonas = metaPersona.getPersonas();
 
         vm.expectRevert();
-        uint256 reverts = deployerPersonas[2];
+        uint256 _v = deployerPersonas[2];
 
         vm.stopPrank();
 
@@ -269,7 +258,7 @@ contract MetaPersonaTest is Test {
         metaPersona.stake(1);
 
         vm.expectRevert(MetaPersona_CantSpawnWhenStaked.selector);
-        metaPersona.spawn(1, 2, deployerAddress);
+        metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
 
         vm.stopPrank();
     }
@@ -288,7 +277,7 @@ contract MetaPersonaTest is Test {
 
         vm.expectEmit(true, true, false, false);
         emit NewPersonaBorn(3, deployerAddress);
-        metaPersona.spawn(1, 2, deployerAddress);
+        metaPersona.spawn{value: spawnFee}(1, 2, deployerAddress);
         vm.stopPrank();
     }
 
@@ -329,7 +318,16 @@ contract MetaPersonaTest is Test {
         vm.stopPrank();
     }
 
-    function test_combineBits(uint256 a, uint256 b) public {
+    function test_revertSpawnIfFeeNotEnough() public {
+        genesis();
+        vm.startPrank(deployerAddress);
+        vm.expectRevert();
+        metaPersona.spawn{value: 1 wei}(1, 2, deployerAddress);
+
+        vm.stopPrank();
+    }
+
+    function test_combineBits(uint256 a, uint256 b) public pure {
         uint8 partA = uint8(a & 127);
         uint8 partB = uint8(b & 127);
 

@@ -27,3 +27,5 @@ error MetaPersona_CantUnstakeUntil(uint256);
 error MetaPersona_AlreadyInForge(uint256);
 error MetaPersona_PersonaNotInForge(uint256);
 error MetaPersona_PersonaInLifeForge();
+error MetaPersona_NotEnoughMetaPersonaToken();
+error MetaPersona_SpawnFeeRequired(uint256);
