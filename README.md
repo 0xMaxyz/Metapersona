@@ -1,3 +1,4 @@
+[![Tests](https://github.com/MetaPersona/Metapersona/actions/workflows/test.yml/badge.svg)](https://github.com/MetaPersona/Metapersona/blob/master/.github/workflows/test.yml)
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**

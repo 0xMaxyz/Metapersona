@@ -1,6 +1,6 @@
 name: test
 
-on: workflow_dispatch
+on: push
 
 env:
   FOUNDRY_PROFILE: ci
@@ -12,6 +12,12 @@ jobs:
 
     name: Foundry project
     runs-on: ubuntu-latest
+    environment: testing
+
+    env:
+      DEPLOYER: ${{ secrets.DEPLOYER }}
+      URI: ${{ secrets.URI }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,5 +36,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          forge test --ffi -vvv
         id: test
