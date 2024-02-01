@@ -1,21 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-error MetaPersona_InvalidGeneticalDataInput(string genes);
-error MetaPersona_InvalidInputString();
-error MetaPersona_InvalidInputCharacter();
-error MetaPersona_InvalidFunctionArgs();
-error MetaPersona_InvalidHexChar();
-error MetaPersona_InvalidInputGeneticData();
-error MetaPersona_PersonaNotFound();
-error MetaPersona_PersonaNotOwnedByYou();
-error MetaPersona_WrongGender();
-error MetaPersona_IncompatiblePersonas();
-error MetaPersona_InvalidInput();
-error MetaPersona_MaxCrossoversReached();
-error MetaPersona_NotMutable();
-error MetaPersona_InvalidChromosome();
-error MetaPersona_InvalidGeneticCombination();
+import "../Errors.sol";
 
 library Random {
     struct RandomArgs {
@@ -118,7 +104,7 @@ library ChromosomeLib {
     }
 
     function meiosis(Genetics.Chromosome[2] calldata _chr, uint256 seed, Random.RandomArgs calldata _args)
-        external
+        public
         pure
         returns (Genetics.Chromosome[4] memory, uint256)
     {
@@ -132,6 +118,16 @@ library ChromosomeLib {
         (cs_3, cs_4, rand) = crossover(_chr, rand, _args);
 
         return ([cs_1, cs_2, cs_3, cs_4], rand);
+    }
+
+    function meiosis1Chr(Genetics.Chromosome[2] calldata _chr, uint256 seed, Random.RandomArgs calldata _args)
+        external
+        pure
+        returns (Genetics.Chromosome memory, uint256)
+    {
+        (Genetics.Chromosome[4] memory chrs, uint256 _seed) = meiosis(_chr, seed, _args);
+        uint256 gamete_index = Random.random(_seed, _args);
+        return (chrs[gamete_index % 4], gamete_index);
     }
 
     function doMaleCrossover(

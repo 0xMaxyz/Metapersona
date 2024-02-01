@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = Metapersona.Contracts
+build_property.ProjectDir = /home/hamid/dev/metapersona/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
