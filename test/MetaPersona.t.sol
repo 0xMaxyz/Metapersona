@@ -20,6 +20,8 @@ contract MetaPersonaTest is Test {
     event PersonaStaked(uint256 indexed _personaId);
     event NewPersonaBorn(uint256 indexed _personaId, address indexed receiver);
     event PersonaUnstaked(uint256 indexed _personaId, uint256 indexed reward);
+    event PersonaAddedToLifeForge(uint256 id);
+    event PersonaLeftLifeForge(uint256 id);
 
     function setUp() public {
         deployerAddress = vm.envAddress("DEPLOYER");
@@ -298,7 +300,8 @@ contract MetaPersonaTest is Test {
         genesis();
 
         uint256 mpBalance = metaPersona.balanceOf(deployerAddress, 0);
-        assert(mpBalance == 0);
+        console.log(mpBalance);
+        assert(mpBalance == 10000 ether);
 
         vm.startPrank(deployerAddress);
         vm.expectEmit(true, false, false, false);
@@ -313,7 +316,7 @@ contract MetaPersonaTest is Test {
         mpBalance = metaPersona.balanceOf(deployerAddress, 0);
         console.log(mpBalance);
 
-        assert(mpBalance > 0);
+        assert(mpBalance > 10000 ether);
 
         vm.stopPrank();
     }
@@ -326,6 +329,100 @@ contract MetaPersonaTest is Test {
 
         vm.stopPrank();
     }
+
+    function test_AddPersonaToLifeForge() public {
+        genesis();
+        vm.startPrank(deployerAddress);
+        vm.expectEmit(true, false, false, false);
+        emit PersonaAddedToLifeForge(1);
+        metaPersona.addPersonaToLifeForge(1, 0.1 ether);
+
+        vm.stopPrank();
+    }
+
+    function test_RemovePersonaFromLifeForge() public {
+        genesis();
+        vm.startPrank(deployerAddress);
+        vm.expectEmit(true, false, false, false);
+        emit PersonaAddedToLifeForge(1);
+        metaPersona.addPersonaToLifeForge(1, 0.1 ether);
+
+        vm.expectEmit(true, false, false, false);
+        emit PersonaLeftLifeForge(1);
+        metaPersona.removePersonaFromLifeForge(1);
+
+        vm.stopPrank();
+    }
+
+    function test_CantStakeWhenInLifeForge() public {
+        genesis();
+        vm.startPrank(deployerAddress);
+        vm.expectEmit(true, false, false, false);
+        emit PersonaAddedToLifeForge(1);
+        metaPersona.addPersonaToLifeForge(1, 0.1 ether);
+
+        vm.expectRevert(MetaPersona_PersonaInLifeForge.selector);
+        metaPersona.stake(1);
+
+        vm.stopPrank();
+    }
+
+    function test_CantEnterLifeForgeWhenStaked() public {
+        genesis();
+        vm.startPrank(deployerAddress);
+        metaPersona.stake(1);
+
+        vm.expectRevert(MetaPersona_CantSpawnWhenStaked.selector);
+        metaPersona.addPersonaToLifeForge(1, 0.1 ether);
+
+        vm.stopPrank();
+    }
+
+    function test_UseLifeForge() public {
+        address user = makeAddr("LifeForgeUser");
+        deal(user, 10 ether);
+
+        genesis();
+        vm.startPrank(deployerAddress);
+        vm.expectEmit(true, false, false, false);
+        emit PersonaAddedToLifeForge(1);
+        metaPersona.addPersonaToLifeForge(1, 0.1 ether);
+
+        // make new persona for user (female)
+        uint256 newPersonaId = metaPersona.spawn{value: spawnFee}(1, 2, user);
+        while (metaPersona.getGender(newPersonaId) != Genetics.Gender.Female) {
+            newPersonaId = metaPersona.spawn(1, 2, user);
+        }
+        // now we're sure that the newPersonaId is a female
+        // transfer some MP to user
+        metaPersona.safeTransferFrom(deployerAddress, user, 0, 10 ether, "");
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        skip(3 days); // to pass the cooldown period
+        metaPersona.useLifeForge(newPersonaId, deployerAddress, 1);
+
+        assert(1 == metaPersona.balanceOf(user, newPersonaId + 1));
+        vm.stopPrank();
+    }
+
+    function test_CantUseLifeForgeWhenUserIsNotInLifeForge() public {
+        address user = makeAddr("LifeForgeUser");
+        deal(user, 10 ether);
+
+        genesis();
+        vm.startPrank(deployerAddress);
+        vm.expectEmit(true, false, false, false);
+        emit PersonaAddedToLifeForge(1);
+        metaPersona.addPersonaToLifeForge(1, 0.1 ether);
+        metaPersona.removePersonaFromLifeForge(1);
+
+        vm.expectRevert();
+        metaPersona.useLifeForge(2, deployerAddress, 1);
+        vm.stopPrank();
+    }
+
+    function test_UseLifeForgeAsSpawner() public {}
 
     function test_combineBits(uint256 a, uint256 b) public pure {
         uint8 partA = uint8(a & 127);

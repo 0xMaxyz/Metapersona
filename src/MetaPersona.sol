@@ -36,6 +36,8 @@ contract MetaPersona is ERC1155, AccessControl {
     mapping(uint256 => bool) private personaInLifeForge;
     mapping(uint256 => uint256) private lifeForgePricePerPersona;
 
+    uint256[] private personasInLifeForge;
+
     event PersonaAddedToLifeForge(uint256 id);
     event PersonaLeftLifeForge(uint256 id);
 
@@ -53,7 +55,8 @@ contract MetaPersona is ERC1155, AccessControl {
         // initialize storage
         seed = _seed;
         PersonaId = 1;
-        // mint
+        // mint MP for deployer, used for testing
+        _mint(msg.sender, METAPERSONATOKEN, 10_000 ether, "");
     }
 
     modifier GenesisOnce() {
@@ -237,6 +240,48 @@ contract MetaPersona is ERC1155, AccessControl {
         _unstake(msg.sender, id);
     }
 
+    function addPersonaToLifeForge(uint256 _personaId, uint256 _forgePrice) external {
+        _addPersonaToForge(msg.sender, _personaId, _forgePrice);
+    }
+
+    function addPersonaToLifeForge(address _personaOwner, uint256 _personaId, uint256 _forgePrice)
+        external
+        onlyRole(SPAWN_ROLE)
+    {
+        _addPersonaToForge(_personaOwner, _personaId, _forgePrice);
+    }
+
+    function removePersonaFromLifeForge(uint256 _id) external {
+        _removePersonaFromForge(msg.sender, _id);
+    }
+
+    function removePersonaFromLifeForge(address _owner, uint256 _id) external onlyRole(SPAWN_ROLE) {
+        _removePersonaFromForge(_owner, _id);
+    }
+
+    function useLifeForge(uint256 _id, address _idInForgeOwner, uint256 _idInForge) external {
+        _useLifeForge(msg.sender, _id, _idInForgeOwner, _idInForge);
+    }
+
+    function useLifeForge(
+        address _owner,
+        uint256 _id,
+        address _idInForgeOwner,
+        uint256 _idInForge,
+        Genetics.Chromosome[2] memory _chr
+    ) external onlyRole(SPAWN_ROLE) {
+        // be sure to call checkUseForgeConditions before calling this function
+        _useLifeForgeAsSpawner(_owner, _id, _idInForgeOwner, _idInForge, _chr);
+    }
+
+    function checkUseForgeConditions(address _owner, uint256 _id, uint256 _idInForge)
+        external
+        view
+        onlyRole(SPAWN_ROLE)
+    {
+        _checkUseForgeConditions(_owner, _id, _idInForge);
+    }
+
     // ---------------------------------- //
     //           View Functions           //
     // ---------------------------------- //
@@ -274,6 +319,10 @@ contract MetaPersona is ERC1155, AccessControl {
         _revertIfNotOwned(msg.sender, _pid);
 
         return _getParents(_pid);
+    }
+
+    function getPersonasInLifeForge() external view returns (uint256[] memory) {
+        return personasInLifeForge;
     }
 
     // ---------------------------------- //
@@ -542,6 +591,7 @@ contract MetaPersona is ERC1155, AccessControl {
 
         personaInLifeForge[id] = true;
         lifeForgePricePerPersona[id] = price;
+        personasInLifeForge.push(id);
 
         emit PersonaAddedToLifeForge(id);
     }
@@ -556,6 +606,17 @@ contract MetaPersona is ERC1155, AccessControl {
 
         delete personaInLifeForge[id];
         delete lifeForgePricePerPersona[id];
+
+        // remove id from personasInLifeForge
+        uint256 idIndex;
+        for (uint256 i = 0; i < personasInLifeForge.length; i++) {
+            if (personasInLifeForge[i] == id) {
+                idIndex = i;
+                break;
+            }
+        }
+        personasInLifeForge[idIndex] = personasInLifeForge[personasInLifeForge.length - 1];
+        personasInLifeForge.pop();
 
         emit PersonaLeftLifeForge(id);
     }
@@ -603,6 +664,10 @@ contract MetaPersona is ERC1155, AccessControl {
         _checkCooldown(_id, _idInForge);
     }
 
-    receive() external payable {}
-    fallback() external payable {}
+    receive() external payable {
+        // recieve tokens sent to contract without calldata
+    }
+    fallback() external payable {
+        // recieve tokens sent to contract
+    }
 }
