@@ -15,7 +15,7 @@ jobs:
     environment: testing
 
     env:
-      DEPLOYER: ${{ vars.DEPLOYER }}
+      DEPLOYER: ${{ secrets.DEPLOYER }}
       URI: ${{ secrets.URI }}
 
     steps:
@@ -30,7 +30,6 @@ jobs:
 
       - name: Run Forge build
         run: |
-          echo $DEPLOYER
           forge --version
           forge build --sizes
         id: build
