@@ -81,6 +81,19 @@ public class Program
             builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
         }
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                // Todo: Add these to env vars
+                policy.WithOrigins("https://localhost:7000", "http://localhost:7000").AllowAnyMethod();
+            });
+            options.AddPolicy(Constants.AllowAnyOrigin, policy =>
+            {
+                policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+            });
+        });
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -89,6 +102,8 @@ public class Program
         app.UseSwagger();
         app.UseSwaggerUI();
         //}
+
+        app.UseCors();
 
         app.UseAuthentication();
         app.UseAuthorization();

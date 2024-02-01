@@ -1,4 +1,5 @@
-﻿using MetaPersonaApi.Data.DTOs;
+﻿using MetaPersonaApi.Data.Contracts;
+using MetaPersonaApi.Data.DTOs;
 using MetaPersonaApi.Services.MetaPersona;
 using Microsoft.AspNetCore.Authorization;
 using System.Numerics;
@@ -15,7 +16,7 @@ public static class MetaPersonaEndpoints
             {
                 // convert SpawnInputDto => SpawnDto
 
-                SpawnDto spawnDto = new SpawnDto
+                SpawnDto spawnDto = new()
                 {
                     Persona1Id = BigInteger.Parse(spawnInputDto.Persona1Id),
                     Persona2Id = BigInteger.Parse(spawnInputDto.Persona2Id),
@@ -38,6 +39,30 @@ public static class MetaPersonaEndpoints
             .WithName("Spawn")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized); ;
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        routes.MapGet("/api/MetaPersona/contract", async (IConfigEntityRepository configRepository) =>
+        {
+            var contractConfig = await configRepository.GetConfigAsync(Constants.ContractAddress);
+            return contractConfig == null ? Results.NoContent() : Results.Ok(contractConfig);
+        })
+            .AllowAnonymous()
+            .WithTags("MetaPersona")
+            .WithName("Contract Address")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        routes.MapGet("/api/MetaPersona/pid/", async (string id) =>
+        {
+            
+        })
+            .AllowAnonymous()
+            .RequireCors(Constants.AllowAnyOrigin)
+            .WithTags("MetaPersona")
+            .WithName("Contract Address")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 }

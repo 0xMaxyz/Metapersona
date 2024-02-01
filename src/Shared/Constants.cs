@@ -2,6 +2,9 @@
 
 public static class Constants
 {
+    // System
+    public static string AllowAnyOrigin => "AllowAnyOrigin";
+
     // Auth
     public static Guid AdminUserId => Guid.Parse("8c748df8-6148-45f8-b286-f0a74078aeb0");
     public static Guid AdminRoleId => Guid.Parse("8c748df8-6148-45f8-b286-f0a74078aeb1");
