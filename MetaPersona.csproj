@@ -13,8 +13,4 @@
     <PackageReference Include="Nethereum.Metamask.Blazor" Version="4.18.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>
