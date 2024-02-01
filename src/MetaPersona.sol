@@ -195,28 +195,30 @@ contract MetaPersona is ERC1155, AccessControl {
         // Check cooldown
         _checkCooldown(_personaId1, _personaId2);
 
-        uint256 newPersonaId = _makeNewPersona(_receiver, personaId++);
-        _copyChromosomeToStorage(newPersonaId, _chr);
+        return _spawnCore(_personaId1, _personaId2, _chr, _receiver);
 
-        emit NewPersonaBorn(newPersonaId, _receiver);
+        // uint256 newPersonaId = _makeNewPersona(_receiver, personaId++);
+        // _copyChromosomeToStorage(newPersonaId, _chr);
 
-        _personas[_receiver].push(newPersonaId);
-        _addChildAndSetParent(_personaId1, _personaId2, newPersonaId);
-        (_personaId1, _personaId2, newPersonaId);
+        // emit NewPersonaBorn(newPersonaId, _receiver);
 
-        // set gender
-        Genetics.Gender childGender = Genetics.getGender(_chr);
-        _gender[newPersonaId] = childGender;
+        // _personas[_receiver].push(newPersonaId);
+        // _addChildAndSetParent(_personaId1, _personaId2, newPersonaId);
+        // (_personaId1, _personaId2, newPersonaId);
 
-        // set cooldown for daughter
-        if (childGender == Genetics.Gender.Female) {
-            _coolDown[newPersonaId] = int256(block.timestamp);
-        }
+        // // set gender
+        // Genetics.Gender childGender = Genetics.getGender(_chr);
+        // _gender[newPersonaId] = childGender;
 
-        // set cooldown for mother
-        _setCooldown(_personaId1, _personaId2);
+        // // set cooldown for daughter
+        // if (childGender == Genetics.Gender.Female) {
+        //     _coolDown[newPersonaId] = int256(block.timestamp);
+        // }
 
-        return newPersonaId;
+        // // set cooldown for mother
+        // _setCooldown(_personaId1, _personaId2);
+
+        //return newPersonaId;
     }
 
     function addSpawner(address _spawner) external onlyRole(SPAWN_ROLE) {
@@ -305,6 +307,12 @@ contract MetaPersona is ERC1155, AccessControl {
         }
     }
 
+    function _revertIfInLifeForge(uint256 id) private view {
+        if (_lifeForge[id]) {
+            revert MetaPersona_PersonaInLifeForge();
+        }
+    }
+
     function _checkCooldown(uint256 _pid1, uint256 _pid2) private view {
         if (
             _gender[_pid1] == Genetics.Gender.Female && _coolDown[_pid1] > 0
@@ -331,58 +339,73 @@ contract MetaPersona is ERC1155, AccessControl {
         _revertIfNotOwned(_personaOwner1, _personaId1);
         _revertIfNotOwned(_personaOwner2, _personaId2);
 
-        // check if one is female and one is a male
-        Genetics.Gender persona1Gender = _gender[_personaId1];
-        Genetics.Gender persona2Gender = _gender[_personaId2];
+        return _spawnBase(_personaId1, _personaId2, _personaOwner1, _personaOwner2, _receiver);
+    }
 
-        if (
-            (persona1Gender == Genetics.Gender.Female && persona2Gender == Genetics.Gender.Male)
-                || (persona1Gender == Genetics.Gender.Male && persona2Gender == Genetics.Gender.Female)
-        ) {
-            // Check cooldown
-            _checkCooldown(_personaId1, _personaId2);
-
-            Random.RandomArgs memory rArgs;
-            uint256 rand;
-
-            rArgs.Prevrandao = block.prevrandao;
-            rArgs.Sender = msg.sender;
-            rArgs.Timestamp = block.timestamp;
-            // spawnable
-            // get gametes
-            Genetics.Chromosome memory persona1_gamete;
-            Genetics.Chromosome memory persona2_gamete;
-
-            (persona1_gamete, rand) = ChromosomeLib.meiosis1Chr(_chromosomes[_personaId1], seed, rArgs);
-            (persona2_gamete, rand) = ChromosomeLib.meiosis1Chr(_chromosomes[_personaId2], rand, rArgs);
-
-            seed = rand; // update seed state value
-
-            uint256 newPersonaId = _makeNewPersona(_receiver, personaId++);
-            _copyChromosomeToStorage(newPersonaId, [persona1_gamete, persona2_gamete]);
-
-            emit NewPersonaBorn(newPersonaId, _receiver);
-
-            _personas[_receiver].push(newPersonaId);
-
-            _addChildAndSetParent(_personaId1, _personaId2, newPersonaId);
-
-            // set gender
-            Genetics.Gender childGender = Genetics.getGender([persona1_gamete, persona2_gamete]);
-            _gender[newPersonaId] = childGender;
-
-            // set cooldown for daughter
-            if (childGender == Genetics.Gender.Female) {
-                _coolDown[newPersonaId] = int256(block.timestamp);
-            }
-
-            // set cooldown for mother
-            _setCooldown(_personaId1, _personaId2);
-
-            return newPersonaId;
-        } else {
+    function _checkValidMaleFemaleCombination(uint256 id1, uint256 id2) private view {
+        bool condition = (_gender[id1] == Genetics.Gender.Female && _gender[id2] == Genetics.Gender.Male)
+            || (_gender[id1] == Genetics.Gender.Male && _gender[id2] == Genetics.Gender.Female);
+        if (!condition) {
             revert MetaPersona_IncompatiblePersonas();
         }
+    }
+
+    function _spawnBase(
+        uint256 _personaId1,
+        uint256 _personaId2,
+        address _personaOwner1,
+        address _personaOwner2,
+        address _receiver
+    ) private returns (uint256) {
+        _checkValidMaleFemaleCombination(_personaId1, _personaId2);
+
+        // Check cooldown
+        _checkCooldown(_personaId1, _personaId2);
+
+        Random.RandomArgs memory rArgs;
+        uint256 rand;
+
+        rArgs.Prevrandao = block.prevrandao;
+        rArgs.Sender = msg.sender;
+        rArgs.Timestamp = block.timestamp;
+        // get gametes
+        Genetics.Chromosome memory persona1_gamete;
+        Genetics.Chromosome memory persona2_gamete;
+
+        (persona1_gamete, rand) = ChromosomeLib.meiosis1Chr(_chromosomes[_personaId1], seed, rArgs);
+        (persona2_gamete, rand) = ChromosomeLib.meiosis1Chr(_chromosomes[_personaId2], rand, rArgs);
+
+        seed = rand; // update seed state value
+
+        return _spawnCore(_personaId1, _personaId2, [persona1_gamete, persona2_gamete], _receiver);
+    }
+
+    function _spawnCore(uint256 _personaId1, uint256 _personaId2, Genetics.Chromosome[2] memory _chr, address _receiver)
+        private
+        returns (uint256)
+    {
+        uint256 newPersonaId = _makeNewPersona(_receiver, personaId++);
+        _copyChromosomeToStorage(newPersonaId, _chr);
+
+        emit NewPersonaBorn(newPersonaId, _receiver);
+
+        _personas[_receiver].push(newPersonaId);
+
+        _addChildAndSetParent(_personaId1, _personaId2, newPersonaId);
+
+        // set gender
+        Genetics.Gender childGender = Genetics.getGender(_chr);
+        _gender[newPersonaId] = childGender;
+
+        // set cooldown for daughter
+        if (childGender == Genetics.Gender.Female) {
+            _coolDown[newPersonaId] = int256(block.timestamp);
+        }
+
+        // set cooldown for mother
+        _setCooldown(_personaId1, _personaId2);
+
+        return newPersonaId;
     }
 
     function _addChild(uint256 _pid1, uint256 _pid2, uint256 childId) private {
@@ -474,6 +497,7 @@ contract MetaPersona is ERC1155, AccessControl {
 
     function _stake(address owner, uint256 id) private {
         _revertIfNotOwned(owner, id);
+        _revertIfInLifeForge(id);
 
         if (_staked[id]) {
             revert MetaPersona_AlreadyStaked();
@@ -509,5 +533,50 @@ contract MetaPersona is ERC1155, AccessControl {
         uint256 partA = _chromosomes[id][0].autosomes[0] & 127;
         uint256 partB = _chromosomes[id][1].autosomes[0] & 127;
         return partA + partB + 1;
+    }
+
+    mapping(uint256 => bool) private _lifeForge;
+    mapping(uint256 => uint256) private _lifeForgePrice;
+
+    event PersonaAddedToLifeForge(uint256 id);
+    event PersonaLeftLifeForge(uint256 id);
+
+    function _addPersonaToForge(address owner, uint256 id, uint256 price) private {
+        // revert if not owned by owner
+        _revertIfNotOwned(owner, id);
+        // revert if staked
+        _revertIfStaked(id);
+        // revert if in forge
+        if (_lifeForge[id]) {
+            revert MetaPersona_AlreadyInForge(id);
+        }
+
+        _lifeForge[id] = true;
+        _lifeForgePrice[id] = price;
+
+        emit PersonaAddedToLifeForge(id);
+    }
+
+    function _removePersonaFromForge(address owner, uint256 id) private {
+        // revert if not owned by owner
+        _revertIfNotOwned(owner, id);
+        // revert if in forge
+        if (!_lifeForge[id]) {
+            revert MetaPersona_PersonaNotInForge(id);
+        }
+
+        delete _lifeForge[id];
+        delete _lifeForgePrice[id];
+
+        emit PersonaLeftLifeForge(id);
+    }
+
+    function _useLifeForge(address owner, uint256 id, uint256 idInForge) private {
+        _revertIfNotOwned(owner, id);
+        _revertIfStaked(id);
+        if (!_lifeForge[idInForge]) {
+            revert MetaPersona_PersonaNotInForge(idInForge);
+        }
+        // can spawn a new persona
     }
 }
