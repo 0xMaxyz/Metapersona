@@ -1,0 +1,19 @@
+name: Docker Compose
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Build and run Docker Compose
+      run: |
+        docker build -t metapersona-web:latest .
+        docker compose up -d
