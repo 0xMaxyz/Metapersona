@@ -1,6 +1,6 @@
 [![Tests](https://github.com/MetaPersona/Metapersona/actions/workflows/test.yml/badge.svg)](https://github.com/MetaPersona/Metapersona/blob/master/.github/workflows/test.yml)
-## MetaPersona
-# Project Description
+# MetaPersona
+## Project Description
 
 
 This is the MetaPersona contract, we used Foundry as the toolkit to work with the blockchain and testing, you could easily install the Foundry and then test the code, for installing the Foundry you could use Foundryup:
@@ -21,7 +21,7 @@ $ forge build
 
 ### Test
 Since we used openssl to generate random numbers in the test file (and deploy script), you have to use --ffi switch to allow commands to run.
-The test script uses some environment variables, you could set them using the .env.example file (the instructions are below).
+The test script uses some environment variables, you could set them using the .env.example file (the instructions are [here](https://github.com/MetaPersona/Metapersona#set-environment-variables)).
 ```shell
 $ forge test --ffi
 ```
@@ -29,7 +29,7 @@ $ forge test --ffi
 ### Deploy
 If you want to deploy the contract yourself, first you need to set the environment variables:
 
-## Set environment variables
+#### Set environment variables
 
 rename the `.env.example` file to `.env`
 
