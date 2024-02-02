@@ -12,7 +12,7 @@ After installing the Foundry, simply clone this project and build it.
 $ git clone https://github.com/MetaPersona/Metapersona.git
 ```
 ### Build
-
+You need to build the project first, when run for the first time, forge gets the required libraries first and then compiles the project.
 ```shell
 $ forge build
 ```
