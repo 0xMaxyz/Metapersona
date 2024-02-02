@@ -30,7 +30,7 @@ Users could stake their Personas for some `METAPERSONA` token, the amount of `ME
 Not all users could have a pair of male and female Personas to spawn a new Persona, so they can use Life Forge, users could add their Personas to Life Forge to get some `METAPERSONA` tokens, and other users could pay them to spawn a new Persona using their Persona.
 #### Functionality
 All functionality is implemented in the smart contract and tests are written to check them, everyone could call external functions of the smart contract. There's a [website](https://www.metapersona.fun) which is designed using Blazor wasm, but it's not ready yet.
-The code for [website](https://github.com/MetaPersona/MetaPersonaWeb) and (webapi)[https://github.com/MetaPersona/MetaPersonaApi] is available in their respective repos.
+The code for [website](https://github.com/MetaPersona/MetaPersonaWeb) and [webapi](https://github.com/MetaPersona/MetaPersonaApi) is available in their respective repos.
 Both web and webapi projects could be deployed using docker, simply call the following command in the root of each project to build and compose them.
 ```shell
 $ docker compose up -d
