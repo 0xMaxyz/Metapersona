@@ -8,6 +8,9 @@ $ curl -L https://foundry.paradigm.xyz | bash
 This will install Foundryup, then simply follow the instructions on-screen, which will make the foundryup command available in your CLI. The foundry book is the best source to work with foundry, you can find it [here](https://book.getfoundry.sh/).
 
 After installing the Foundry, simply clone this project and build it.
+```shell
+$ git clone https://github.com/MetaPersona/Metapersona.git
+```
 ### Build
 
 ```shell
