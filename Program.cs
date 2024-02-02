@@ -86,7 +86,7 @@ public class Program
             options.AddDefaultPolicy(policy =>
             {
                 // Todo: Add these to env vars
-                policy.WithOrigins("https://localhost:7000", "http://localhost:7000", "https://metapersona.fun", "https://www.metapersona.fun", "http://192.168.0.0/24", "http://172.16.0.0/12")
+                policy.WithOrigins("https://localhost:7000", "http://localhost:7000", "https://metapersona.fun", "https://www.metapersona.fun", "http://192.168.0.0/24", "http://172.19.0.0/12")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
