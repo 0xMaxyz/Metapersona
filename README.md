@@ -35,7 +35,7 @@ Both web and webapi projects could be deployed using docker, simply call the fol
 ```shell
 $ docker compose up -d
 ```
-The api is deployed to this (address)[https://www.metapersona.fun/api] and it could be tested, e.g. call the following public anonymous endpoint to get the contract address
+The api is deployed to this [address](https://www.metapersona.fun/api) and it could be tested, e.g. call the following public anonymous endpoint to get the contract address
 ```shell
 $ curl https://metapersona.fun/api/metapersona/contract
 ```
