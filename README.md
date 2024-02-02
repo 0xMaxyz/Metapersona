@@ -20,6 +20,13 @@ struct Chromosome {
 ```
 Our modeled chromosomes has a length of 10176 bits, this length is proportional to the real human chromosomes (that 3e9 base pairs), for arriving at this length we took the chromosome 21 as the reference chromosome and then calculated the length of other chromosomes according to their real length, then bucketized (devidable by 8) the values in uint256 and created the chromosome struct.
 
+#### Genesis
+The `MetaPersona.s.sol` deploys the contract and then runs a genesis function to make the Adam (male persona) and Eve (female persona) and mints them for contract deployer. then contract deployer could use `spawn` function to make new personas for himself/herself  or for a `_receiver` address,
+#### Spawning
+If anyone own two male and female Personas, then they could call the `spawn` function to spawn a new Persona. There are two `spawn` functions in the contract, one of them is only could be called by someone with `SPAWN_ROLE`, since the amount of calculation and data saving is alot in this contract, we made a companion api to lower the gas cost for Persona spawning, the meiosis (and crossover of chromosomes) are done offchain and then the web api spawns the Persona for requester, this way we lowered the gas cost by 50% comparing to onchain spawning.
+#### Staking
+Users could stake their Personas for some `METAPERSONA` token, the amount of `METAPERSONA` token generated for Personas is different and it depends on their genes, when a Persona is staked, it cannot spawn a new Persona. Users could use the `METAPERSONA` rewards to pay for fees and use it in Life Forge.
+#### Life Forge
 
 ## Smart Contract
 This is the MetaPersona contract, we used Foundry as the toolkit to work with the blockchain and testing, you could easily install the Foundry and then test the code, for installing the Foundry you could use Foundryup:
