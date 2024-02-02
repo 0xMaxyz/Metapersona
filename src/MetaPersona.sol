@@ -24,6 +24,9 @@ contract MetaPersona is ERC1155, AccessControl {
     uint256 private fixedStakeReward = 0.01 ether;
     uint256 private transferFee = 0.0001 ether;
 
+    uint256 private testsSpawned = 0;
+    mapping(address => uint256) public TestsSpawned;
+
     mapping(address => uint256[]) private personas;
     mapping(uint256 => uint256[]) private children;
     mapping(uint256 => uint256) private coolDown;
@@ -280,6 +283,34 @@ contract MetaPersona is ERC1155, AccessControl {
         onlyRole(SPAWN_ROLE)
     {
         _checkUseForgeConditions(_owner, _id, _idInForge);
+    }
+
+    function spawnTestPersonas(address _receiver) public returns (uint256) {
+        require(testsSpawned <= 400, "All test personas are spawned");
+        require(TestsSpawned[_receiver] <= 2, "You received your test personas before");
+
+        testsSpawned += 1;
+        TestsSpawned[_receiver] += 1;
+
+        return _spawnBase(1, 2, _receiver, false);
+    }
+
+    function canSpawnTestPersona(address _receiver) public view returns (bool) {
+        return (testsSpawned <= 400) && (TestsSpawned[_receiver] <= 2);
+    }
+
+    function spawnTestPersonas(address _receiver, Genetics.Chromosome[2] memory _chr)
+        public
+        onlyRole(SPAWN_ROLE)
+        returns (uint256)
+    {
+        require(testsSpawned <= 400, "All test personas are spawned");
+        require(TestsSpawned[_receiver] <= 2, "You received your test personas before");
+
+        testsSpawned += 1;
+        TestsSpawned[_receiver] += 1;
+
+        return _spawnCore(1, 2, _chr, _receiver);
     }
 
     // ---------------------------------- //

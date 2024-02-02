@@ -422,6 +422,61 @@ contract MetaPersonaTest is Test {
         vm.stopPrank();
     }
 
+    function test_CanGetTestPersona() public {
+        address user = makeAddr("test");
+
+        genesis();
+
+        bool canGet = metaPersona.canSpawnTestPersona(user);
+        assertEq(canGet, true);
+    }
+
+    function test_GetTestPersona() public {
+        address user = makeAddr("test");
+
+        genesis();
+
+        uint256 pid = metaPersona.spawnTestPersonas(user);
+        assertEq(pid, 3);
+
+        pid = metaPersona.spawnTestPersonas(user);
+        assertEq(pid, 4);
+
+        pid = metaPersona.spawnTestPersonas(user);
+        assertEq(pid, 5);
+
+        vm.expectRevert();
+        pid = metaPersona.spawnTestPersonas(user);
+    }
+
+    function test_GetTestPersonaFromSpawner() public {
+        address user = makeAddr("test");
+
+        vm.prank(deployerAddress);
+        metaPersona.addSpawner(user);
+
+        genesis();
+
+        vm.prank(deployerAddress);
+        Genetics.Chromosome[2] memory _chr = metaPersona.getChromosomes(1);
+
+        vm.startPrank(user);
+
+        uint256 pid = metaPersona.spawnTestPersonas(user, _chr);
+        console.log(pid);
+        assertEq(pid, 3);
+
+        pid = metaPersona.spawnTestPersonas(user, _chr);
+        assertEq(pid, 4);
+
+        pid = metaPersona.spawnTestPersonas(user, _chr);
+        assertEq(pid, 5);
+
+        vm.expectRevert();
+        pid = metaPersona.spawnTestPersonas(user, _chr);
+        vm.stopPrank();
+    }
+
     function test_UseLifeForgeAsSpawner() public {}
 
     function test_combineBits(uint256 a, uint256 b) public pure {
