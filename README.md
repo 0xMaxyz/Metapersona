@@ -9,7 +9,16 @@ We all get our chromosomes from our parents, and we get one chromosome from each
 There are rougly around 3 billion base pairs in human genome, each base pair has 4 possible combination so if we want to make a better model we need to have 3e9 * 2 bits to save the possible base pairs, this is the minimum amount for a basic model which by the way does not consider the MT base pairs.
 This was a very very concise description of the chromosomes and the way they combine to make a human being.
 ### Personas
-We modeled chromosomes 
+We modeled chromosomes as structs in solidity
+a chromosome struct is 
+```solidity
+struct Chromosome {
+        uint256[37] autosomes;
+        uint256[2] x;
+        uint192 y;
+    }
+```
+Our modeled chromosomes has a length of 10176 bits, this length is proportional to the real human chromosomes (that 3e9 base pairs), for arriving at this length we took the chromosome 21 as the reference chromosome and then calculated the length of other chromosomes according to their real length, then bucketized (devidable by 8) the values in uint256 and created the chromosome struct.
 
 
 ## Smart Contract
