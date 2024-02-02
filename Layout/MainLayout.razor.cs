@@ -3,56 +3,55 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Nethereum.Metamask;
 
-namespace MetaPersona.Layout
+namespace MetaPersona.Layout;
+
+public partial class MainLayout
 {
-    public partial class MainLayout : IDisposable
+    [Inject] public MetamaskHostProvider HostProvider { get; set; }
+    [Inject] public IDialogService DialogService { get; set; }
+
+    private bool _isDarkMode = true;
+    private MudThemeProvider _mudThemeProvider;
+
+    protected override Task OnInitializedAsync()
     {
-        [Inject] public MetamaskHostProvider HostProvider { get; set; }
-        [Inject] public IDialogService DialogService { get; set; }
+        HostProvider.NetworkChanged += OnNetworkChangedAsync;
+        return base.OnInitializedAsync();
+    }
 
-        private bool _isDarkMode = true;
-        private MudThemeProvider _mudThemeProvider;
-
-        protected override Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            HostProvider.NetworkChanged += OnNetworkChangedAsync;
-            return base.OnInitializedAsync();
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
+            try
             {
-                try
-                {
-                    _isDarkMode = await _mudThemeProvider.GetSystemPreference();
-                    await _mudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
-                    StateHasChanged();
-                }
-                catch
-                { }
+                _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+                await _mudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+                StateHasChanged();
             }
+            catch
+            { }
         }
+    }
 
-        private async Task OnNetworkChangedAsync(long chainId)
+    private async Task OnNetworkChangedAsync(long chainId)
+    {
+        if (chainId != 462)
         {
-            if (chainId != 462)
-            {
-                var options = new DialogOptions { CloseOnEscapeKey = false, CloseButton = false, ClassBackground = "glass", DisableBackdropClick = true };
-                await DialogService.ShowAsync<WrongNetwork>("Unsupported Network", options);
-            }
+            var options = new DialogOptions { CloseOnEscapeKey = false, CloseButton = false, ClassBackground = "glass", DisableBackdropClick = true };
+            await DialogService.ShowAsync<WrongNetwork>("Unsupported Network", options);
         }
+    }
 
-        private Task OnSystemPreferenceChanged(bool newValue)
-        {
-            _isDarkMode = newValue;
-            return Task.CompletedTask;
-        }
+    private Task OnSystemPreferenceChanged(bool newValue)
+    {
+        _isDarkMode = newValue;
+        return Task.CompletedTask;
+    }
 
-        public void Dispose()
-        {
-            HostProvider.NetworkChanged -= OnNetworkChangedAsync;
+    public void Dispose()
+    {
+        HostProvider.NetworkChanged -= OnNetworkChangedAsync;
 
-        }
     }
 }
