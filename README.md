@@ -97,4 +97,4 @@ After setting the .env file, you could use the following command to deploy the c
 $ forge script --ffi ./script/MetaPersona.s.sol --rpc-url $AREON_TESTNET_RPC_URL --private-key $PRIVATE_KEY 
 ```
 
-The contract is deployed on Aeron Network [testnet](https://areonscan.com/contracts/0xc758b2ecd4bff53a2586f79ab9436617a884ca85).
+The contract is deployed on Aeron Network [testnet](https://areonscan.com/contracts/0xd5a6c34410413d81f8577f4f82a72f1a26bf86f9).
