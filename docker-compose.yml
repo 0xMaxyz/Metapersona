@@ -1,9 +1,5 @@
 version: '3.8'
 
-networks:
- dev:
-  driver: bridge
-
 services:
   webapi:
     env_file: .env
@@ -17,7 +13,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       - RPC_URL=${RPC_URL}
       - JKEY=${JKEY}
@@ -25,7 +21,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=app_db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
     networks:
-      - dev
+      - my-network
     command: >
       bash -c "dotnet ef database update && dotnet run"
 
@@ -44,8 +40,11 @@ services:
     ports:
       - "127.0.0.1:5432:5432" 
     networks:
-      - dev
+      - my-network
 
 volumes:
   pgdata:
   my_keys_volume:  
+networks:
+  my-network:
+    driver: bridge

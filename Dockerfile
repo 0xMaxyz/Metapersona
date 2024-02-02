@@ -14,7 +14,7 @@ RUN export PATH="$PATH:/root/.dotnet/tools"
 RUN dotnet tool install --global dotnet-ef
 
 COPY . ./
-RUN dotnet publish -c Release -o out
+RUN dotnet publish "MetaPersonaApi.csproj" -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app

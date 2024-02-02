@@ -48,7 +48,7 @@ public static class MetaPersonaEndpoints
         })
             .AllowAnonymous()
             .WithTags("MetaPersona")
-            .WithName("Contract Address")
+            .WithName("Public Contract Address")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized);
@@ -59,7 +59,7 @@ public static class MetaPersonaEndpoints
         })
             .AllowAnonymous()
             .RequireCors(Constants.AllowAnyOrigin)
-            .WithTags("MetaPersona")
+            .WithTags("MetaPersona Metadata")
             .WithName("Contract Address")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status204NoContent)
