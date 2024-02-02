@@ -27,7 +27,18 @@ If anyone own two male and female Personas, then they could call the `spawn` fun
 #### Staking
 Users could stake their Personas for some `METAPERSONA` token, the amount of `METAPERSONA` token generated for Personas is different and it depends on their genes, when a Persona is staked, it cannot spawn a new Persona. Users could use the `METAPERSONA` rewards to pay for fees and use it in Life Forge.
 #### Life Forge
-
+Not all users could have a pair of male and female Personas to spawn a new Persona, so they can use Life Forge, users could add their Personas to Life Forge to get some `METAPERSONA` tokens, and other users could pay them to spawn a new Persona using their Persona.
+#### Functionality
+All functionality is implemented in the smart contract and tests are written to check them, everyone could call external functions of the smart contract. There's a [website](https://www.metapersona.fun) which is designed using Blazor wasm, but it's not ready yet.
+The code for [website](https://github.com/MetaPersona/MetaPersonaWeb) and (webapi)[https://github.com/MetaPersona/MetaPersonaApi] is available in their respective repos.
+Both web and webapi projects could be deployed using docker, simply call the following command in the root of each project to build and compose them.
+```shell
+$ docker compose up -d
+```
+The api is deployed to this (address)[https://www.metapersona.fun/api] and it could be tested, e.g. call the following public anonymous endpoint to get the contract address
+```shell
+$ curl https://metapersona.fun/api/metapersona/contract
+```
 ## Smart Contract
 This is the MetaPersona contract, we used Foundry as the toolkit to work with the blockchain and testing, you could easily install the Foundry and then test the code, for installing the Foundry you could use Foundryup:
 ```shell
