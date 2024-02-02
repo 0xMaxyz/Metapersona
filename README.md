@@ -1,21 +1,13 @@
 [![Tests](https://github.com/MetaPersona/Metapersona/actions/workflows/test.yml/badge.svg)](https://github.com/MetaPersona/Metapersona/blob/master/.github/workflows/test.yml)
-## Foundry
+## MetaPersona
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This is the MetaPersona contract, we used Foundry as the toolkit to work with the blockchain and testing, you could easily install the Foundry and then test the code, for installing the Foundry you could use Foundryup:
+```shell
+$ curl -L https://foundry.paradigm.xyz | bash
+```
+This will install Foundryup, then simply follow the instructions on-screen, which will make the foundryup command available in your CLI. The foundry book is the best source to work with foundry, you can find it [here](https://book.getfoundry.sh/).
 
-Foundry consists of:
-
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
+After installing the Foundry, simply clone this project and build it.
 ### Build
 
 ```shell
@@ -23,50 +15,16 @@ $ forge build
 ```
 
 ### Test
-
+Since we used openssl to generate random numbers in the test file (and deploy script), you have to use --ffi switch to allow commands to run.
+The test script uses some environment variables, you could set them using the .env.example file (the instructions are below).
 ```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
+$ forge test --ffi
 ```
 
 ### Deploy
+If you want to deploy the contract yourself, first you need to set the environment variables:
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
-
-### Set environment variables
+## Set environment variables
 
 rename the `.env.example` file to `.env`
 
@@ -86,8 +44,15 @@ Set the environment variables in the `.env`, and then run
 $ source .env
 ```
 
+
 You could use `unset.env.sh` to unset the configured environment variables
 
 ```shell
 $ source ./unset.env.sh
 ```
+After setting the .env file, you could use the following command to deploy the contract:
+```shell
+$ forge script --ffi ./script/MetaPersona.s.sol --rpc-url $AREON_TESTNET_RPC_URL --private-key $PRIVATE_KEY 
+```
+
+The contract is deployed on Aeron Network [testnet](https://areonscan.com/contracts/0xc758b2ecd4bff53a2586f79ab9436617a884ca85).
