@@ -25,13 +25,13 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         var conn = builder.Configuration.GetConnectionString("DefaultConnection");
-        
+
         // Add services to the container.
         builder.Services.AddDbContext<MetaPersonaDbContext>(options =>
         {
             options.UseNpgsql(conn);
         });
-        
+
 
         builder.Services.AddIdentityCore<MetaPersonaIdentityUser>()
         .AddRoles<IdentityRole<Guid>>()
@@ -86,7 +86,10 @@ public class Program
             options.AddDefaultPolicy(policy =>
             {
                 // Todo: Add these to env vars
-                policy.WithOrigins("https://localhost:7000", "http://localhost:7000").AllowAnyMethod();
+                policy.WithOrigins("https://localhost:7000", "http://localhost:7000", "https://metapersona.fun", "https://www.metapersona.fun", "http://192.168.0.0/24", "http://172.16.0.0/12")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
             });
             options.AddPolicy(Constants.AllowAnyOrigin, policy =>
             {
@@ -99,8 +102,8 @@ public class Program
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-        app.UseSwagger();
-        app.UseSwaggerUI();
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
 
         app.UseCors();
