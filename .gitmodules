@@ -1,0 +1,4 @@
+[submodule "Contracts"]
+	path = Contracts
+	url = https://github.com/omni001s/Metapersona.git
+	branch = contracts
